@@ -1,0 +1,17 @@
+{
+  "compiler": {
+    "reactCompiler": true
+  },
+  "typescript": {
+    "ignoreBuildErrors": true
+  },
+  "images": {
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "**"
+      }
+    ],
+    "unoptimized": true
+  }
+}
