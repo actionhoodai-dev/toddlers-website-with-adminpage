@@ -65,7 +65,7 @@ This website is built with Next.js 16, React 19, and Tailwind CSS v4, featuring:
 
 ### Installation
 
-```bash
+\`\`\`bash
 # Clone or download the project
 cd toddlers-website
 
@@ -76,7 +76,7 @@ npm install
 npm run dev
 
 # Open http://localhost:3000
-```
+\`\`\`
 
 ### Demo Credentials
 
@@ -114,7 +114,7 @@ Navigate to `/admin/login` to access the admin dashboard.
 
 ## File Structure
 
-```
+\`\`\`
 app/
 ├── layout.tsx              # Root layout with metadata
 ├── page.tsx                # Home page
@@ -141,27 +141,27 @@ components/
 
 hooks/
 └── use-scroll-position.ts # Scroll position tracking
-```
+\`\`\`
 
 ## Deployment
 
 ### Vercel (Recommended)
 
-```bash
+\`\`\`bash
 # Connect your GitHub repo to Vercel
 # Push to main branch to auto-deploy
-```
+\`\`\`
 
 ### Environment Variables
 
 Create a `.env.local` file for local development:
 
-```env
+\`\`\`env
 # For Supabase integration (optional)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_key
-```
+\`\`\`
 
 ## Customization
 
