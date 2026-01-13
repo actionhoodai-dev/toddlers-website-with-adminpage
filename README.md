@@ -10,7 +10,6 @@ This website is built with Next.js 16, React 19, and Tailwind CSS v4, featuring:
 - **Smooth Animations**: Scroll-based reveals and micro-interactions using Framer Motion and CSS animations
 - **Responsive Design**: Mobile-first approach that works seamlessly across all devices
 - **SEO-Ready**: Full metadata, Open Graph tags, sitemaps, and robots.txt
-- **Admin Dashboard**: Secure gallery management system with Supabase integration ready
 - **Accessibility**: WCAG compliant with proper semantic HTML and ARIA attributes
 
 ## Pages
@@ -20,11 +19,8 @@ This website is built with Next.js 16, React 19, and Tailwind CSS v4, featuring:
 - **Services** (`/services`) - Detailed information about all four services offered
 - **Clinical Conditions** (`/conditions`) - Comprehensive list of treatable conditions with filtering
 - **Programs & Therapies** (`/programs`) - Detailed content about rehabilitation programs
-- **Gallery** (`/gallery`) - Showcase of center activities (admin-controlled)
+- **Gallery** (`/gallery`) - Showcase of center activities
 - **Contact** (`/contact`) - Contact form, location, hours, and direct communication options
-- **Admin Login** (`/admin/login`) - Secure admin authentication
-- **Admin Dashboard** (`/admin`) - Gallery and content management
-- **Gallery Admin** (`/admin/gallery`) - Upload, manage, and reorder images
 
 ## Tech Stack
 
@@ -38,7 +34,6 @@ This website is built with Next.js 16, React 19, and Tailwind CSS v4, featuring:
 
 ### Backend Ready
 - **Database**: Supabase (configured but with local fallbacks)
-- **Authentication**: Supabase Auth (admin only)
 - **Storage**: Supabase Storage (for gallery images)
 
 ## Design System
@@ -78,13 +73,7 @@ npm run dev
 # Open http://localhost:3000
 \`\`\`
 
-### Demo Credentials
-
-**Admin Access:**
-- Email: `admin@toddlers.com`
-- Password: `secure_password_123`
-
-Navigate to `/admin/login` to access the admin dashboard.
+### Installation
 
 ## Features
 
@@ -96,8 +85,6 @@ Navigate to `/admin/login` to access the admin dashboard.
 - Comprehensive programs and therapies content
 - Contact form with validation
 - WhatsApp and direct call integration
-- Admin authentication system
-- Gallery management UI (ready for Supabase)
 - SEO optimization (metadata, sitemaps, robots.txt)
 - Open Graph support for social sharing
 - Accessibility features (WCAG compliant)
@@ -108,7 +95,6 @@ Navigate to `/admin/login` to access the admin dashboard.
 ### 🔄 Ready for Integration
 - Supabase Database for gallery metadata
 - Supabase Storage for image uploads
-- Supabase Auth for admin authentication
 - Email notifications for contact form
 - CMS integration for content management
 
@@ -125,10 +111,6 @@ app/
 ├── programs/page.tsx       # Programs & therapies page
 ├── gallery/page.tsx        # Gallery showcase
 ├── contact/page.tsx        # Contact page
-├── admin/
-│   ├── page.tsx           # Admin dashboard
-│   ├── login/page.tsx     # Admin login
-│   └── gallery/page.tsx   # Gallery management
 ├── not-found.tsx          # 404 page
 ├── robots.ts              # SEO robots.txt
 ├── sitemap.ts             # XML sitemap

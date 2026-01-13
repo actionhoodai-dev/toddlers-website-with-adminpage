@@ -5,7 +5,6 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/admin/login"],
     },
     sitemap: "https://toddlers-rehab.com/sitemap.xml",
   }

@@ -16,7 +16,5 @@ export const supabase = createClient(
 if (process.env.NODE_ENV === "development") {
     if (!supabaseUrl || !supabaseAnonKey) {
         console.error("Supabase environment variables are missing!")
-    } else {
-        console.log("Supabase client initialized with URL:", supabaseUrl)
     }
 }
