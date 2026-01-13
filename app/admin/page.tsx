@@ -1,29 +1,52 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { LogOut } from "lucide-react"
+import { LogOut, Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabase/client"
 
 export default function AdminPage() {
+  const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is authenticated
-    const auth = localStorage.getItem("admin_authenticated")
-    if (auth) {
-      setIsAuthenticated(true)
+    // Check if user is authenticated via Supabase session
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setIsAuthenticated(true)
+        } else {
+          router.push("/admin/login")
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error)
+        router.push("/admin/login")
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
-  }, [])
+    checkUser()
+  }, [router])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push("/admin/login")
+  }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-muted-foreground">
+        <Loader2 className="animate-spin mb-4" size={32} />
+        <p>Verifying session...</p>
+      </div>
+    )
   }
 
   if (!isAuthenticated) {
-    return redirect("/admin/login")
+    return null
   }
 
   return (
@@ -32,10 +55,7 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
           <button
-            onClick={() => {
-              localStorage.removeItem("admin_authenticated")
-              redirect("/admin/login")
-            }}
+            onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
           >
             <LogOut size={20} />

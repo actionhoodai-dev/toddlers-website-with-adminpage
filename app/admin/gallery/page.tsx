@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Upload, Trash2, Eye, EyeOff, ChevronUp, ChevronDown, Loader2 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
 interface GalleryItem {
@@ -29,13 +29,22 @@ export default function GalleryAdmin() {
   const [file, setFile] = useState<File | null>(null)
 
   useEffect(() => {
-    const auth = localStorage.getItem("admin_authenticated")
-    if (!auth) {
-      router.push("/admin/login")
-      return
+    // Check if user is authenticated via Supabase session
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setIsAuthenticated(true)
+          fetchGalleryItems()
+        } else {
+          router.push("/admin/login")
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error)
+        router.push("/admin/login")
+      }
     }
-    setIsAuthenticated(true)
-    fetchGalleryItems()
+    checkUser()
   }, [router])
 
   const fetchGalleryItems = async () => {
@@ -334,8 +343,8 @@ export default function GalleryAdmin() {
                           <button
                             onClick={() => handleToggleVisibility(item.id, item.visible)}
                             className={`p-2 rounded-lg transition-colors ${item.visible
-                                ? "bg-primary/10 text-primary hover:bg-primary/20"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              ? "bg-primary/10 text-primary hover:bg-primary/20"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
                               }`}
                           >
                             {item.visible ? <Eye size={18} /> : <EyeOff size={18} />}

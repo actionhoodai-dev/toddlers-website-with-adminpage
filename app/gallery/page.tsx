@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Loader } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase/client"
 
 interface GalleryImage {
   id: string

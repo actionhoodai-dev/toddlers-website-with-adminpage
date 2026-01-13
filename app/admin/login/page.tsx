@@ -1,11 +1,10 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Lock } from "lucide-react"
+import { Lock, Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabase/client"
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("")
@@ -14,20 +13,38 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  useEffect(() => {
+    // If already logged in, redirect to admin dashboard
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push("/admin")
+      }
+    }
+    checkUser()
+  }, [router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
-    // Simulated admin credentials - in production, use real authentication
-    if (email === "admin@toddlers.com" && password === "secure_password_123") {
-      localStorage.setItem("admin_authenticated", "true")
-      router.push("/admin")
-    } else {
-      setError("Invalid email or password")
-    }
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    setLoading(false)
+      if (authError) throw authError
+
+      if (data.session) {
+        router.push("/admin")
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during login")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -89,12 +106,6 @@ export default function AdminLogin() {
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>
-
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p className="font-mono text-xs mt-2">Email: admin@toddlers.com</p>
-            <p className="font-mono text-xs">Password: secure_password_123</p>
-          </div>
 
           <div className="mt-6 text-center">
             <Link href="/" className="text-primary hover:text-primary/90 transition-colors text-sm font-medium">
