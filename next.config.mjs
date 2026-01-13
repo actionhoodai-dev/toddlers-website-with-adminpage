@@ -13,15 +13,6 @@ const nextConfig = {
     unoptimized: true,
   },
   reactCompiler: true,
-  async redirects() {
-    return [
-      {
-        source: "/admin",
-        destination: "/admin/dashboard",
-        permanent: false,
-      },
-    ]
-  },
 }
 
 export default nextConfig
