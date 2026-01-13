@@ -66,6 +66,13 @@ export default function AdminLogin() {
           <p className="text-center text-muted-foreground mb-8">Toddlers - Centre for Learning and Rehabilitation</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {!process.env.NEXT_PUBLIC_SUPABASE_URL && (
+              <div className="bg-amber-100 border border-amber-200 text-amber-800 text-sm rounded-lg p-3 mb-4">
+                <strong>Attention:</strong> Supabase URL is missing from environment variables.
+                Please ensure you have added <code>NEXT_PUBLIC_SUPABASE_URL</code> to Vercel and redeployed.
+              </div>
+            )}
+
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg p-3">
                 {error}
