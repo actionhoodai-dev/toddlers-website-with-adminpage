@@ -41,7 +41,11 @@ export default function AdminLogin() {
         router.push("/admin")
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred during login")
+      if (err.message === "Email not confirmed") {
+        setError("Please check your email to confirm your account, or disable email confirmation in Supabase dashboard.")
+      } else {
+        setError(err.message || "An error occurred during login")
+      }
     } finally {
       setLoading(false)
     }
