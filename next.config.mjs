@@ -12,9 +12,7 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
-  experimental: {
-    reactCompiler: true,
-  },
+  reactCompiler: true,
   async redirects() {
     return [
       {

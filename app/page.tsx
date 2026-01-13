@@ -142,7 +142,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {conditions.slice(0, 12).map((condition, i) => (
               <div
-                key={condition.id}
+                key={condition}
                 className="bg-card border border-border rounded-lg p-4 text-center hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group animate-fade-in-up"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
