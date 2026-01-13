@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Loader } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 interface GalleryImage {
   id: string
@@ -18,9 +19,25 @@ export default function Gallery() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null)
 
   useEffect(() => {
-    // In production, this would fetch from Supabase
-    // For now, we'll show the gallery structure
-    setLoading(false)
+    async function fetchImages() {
+      try {
+        setLoading(true)
+        const { data, error } = await supabase
+          .from("gallery")
+          .select("*")
+          .eq("visible", true)
+          .order("order", { ascending: true })
+
+        if (error) throw error
+        setImages(data || [])
+      } catch (error: any) {
+        console.error("Error fetching gallery:", error.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchImages()
   }, [])
 
   return (
