@@ -82,8 +82,9 @@ export default function AdminDashboard() {
                 {/* Quick Actions */}
                 <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mb-8">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <QuickAction href="/admin/upload" label="Upload Image" icon="upload" color="teal" />
+                        <QuickAction href="/admin/gallery" label="Manage Gallery" icon="image" color="teal" />
                         <QuickAction href="/admin/messages" label="View Messages" icon="mail-open" color="blue" />
                         <QuickAction href="/admin/settings" label="Settings" icon="settings" color="purple" />
                         <QuickAction href="/admin/analytics" label="Analytics" icon="chart-bar" color="green" />

@@ -14,14 +14,60 @@ export default function UploadPage() {
     const [uploading, setUploading] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [galleryCount, setGalleryCount] = useState<number | null>(null)
+    const [preview, setPreview] = useState<string | null>(null)
 
     useEffect(() => {
         async function checkLimit() {
-            const { count } = await supabase.from("gallery").select("*", { count: "exact", head: true })
-            setGalleryCount(count || 0)
+            try {
+                const { count, error } = await supabase.from("gallery").select("*", { count: "exact", head: true })
+                if (error) {
+                    console.error("Limit Check Error:", error)
+                    return // Don't block UI on limit check error, but log it
+                }
+                setGalleryCount(count || 0)
+            } catch (e) {
+                console.error("Limit Check Crash:", e)
+            }
         }
         checkLimit()
     }, [])
+
+    // Cleanup preview URL
+    useEffect(() => {
+        return () => {
+            if (preview) URL.revokeObjectURL(preview)
+        }
+    }, [preview])
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0] || null
+        setFile(selectedFile)
+
+        if (selectedFile) {
+            const url = URL.createObjectURL(selectedFile)
+            setPreview(url)
+        } else {
+            setPreview(null)
+        }
+    }
+
+    const testConnection = async () => {
+        setMessage({ type: 'success', text: "Testing connection... check console." })
+        try {
+            console.log("Testing Storage Connection to 'gallery-images'...")
+            const { data, error } = await supabase.storage.from('gallery-images').list()
+            if (error) {
+                console.error("Storage Test Failed:", error)
+                alert(`Connection Test Failed: ${error.message}`)
+            } else {
+                console.log("Storage Test Passed. Found items:", data)
+                alert(`Connection Test Passed! Bucket 'gallery-images' is accessible. Found ${data.length} items.`)
+            }
+        } catch (e: any) {
+            console.error("Test Crashed:", e)
+            alert(`Test Crashed: ${e.message}`)
+        }
+    }
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -51,14 +97,12 @@ export default function UploadPage() {
 
         try {
             const fileExt = file.name.split('.').pop() || 'jpg'
-            // Sanitize filename to avoid path issues
             const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase()
             const fileName = `${Date.now()}_${safeTitle}.${fileExt}`
-            const filePath = fileName // Simple path
+            const filePath = fileName
 
             console.log("Uploading to bucket 'gallery-images' at path:", filePath)
 
-            // Upload to Storage
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from("gallery-images")
                 .upload(filePath, file, {
@@ -73,14 +117,12 @@ export default function UploadPage() {
 
             console.log("Upload success, data:", uploadData)
 
-            // Get Public URL
             const { data: { publicUrl } } = supabase.storage
                 .from("gallery-images")
                 .getPublicUrl(filePath)
 
             console.log("Got public URL:", publicUrl)
 
-            // Insert into DB
             const { error: dbError } = await supabase.from("gallery").insert({
                 title,
                 description,
@@ -98,9 +140,10 @@ export default function UploadPage() {
             setTitle("")
             setDescription("")
             setFile(null)
+            setPreview(null)
             setGalleryCount(prev => (prev || 0) + 1)
 
-            setTimeout(() => router.push("/admin"), 1500)
+            setTimeout(() => router.push("/admin/gallery"), 1500) // Redirect to gallery manager
 
         } catch (error: any) {
             console.error("Handle Upload Catch:", error)
@@ -115,7 +158,10 @@ export default function UploadPage() {
             <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-800">Upload Image</h1>
-                    <Link href="/admin" className="text-sm text-gray-500 hover:text-gray-700">Cancel</Link>
+                    <div className="space-x-4">
+                        <button type="button" onClick={testConnection} className="text-sm text-teal-600 hover:text-teal-800 underline">Test Connection</button>
+                        <Link href="/admin" className="text-sm text-gray-500 hover:text-gray-700">Cancel</Link>
+                    </div>
                 </div>
 
                 {galleryCount !== null && galleryCount >= 130 && (
@@ -147,7 +193,14 @@ export default function UploadPage() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">File *</label>
-                        <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" required disabled={galleryCount! >= 150} />
+                        <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" required disabled={galleryCount! >= 150} />
+
+                        {preview && (
+                            <div className="mt-4">
+                                <p className="text-xs text-gray-500 mb-2">Preview:</p>
+                                <img src={preview} alt="Preview" className="h-48 w-auto rounded-lg border border-gray-200 object-cover" />
+                            </div>
+                        )}
                     </div>
 
                     {message && (
