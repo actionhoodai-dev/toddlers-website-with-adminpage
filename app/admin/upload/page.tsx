@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { uploadImage } from "@/app/actions/upload-image"
 
 export default function UploadPage() {
     const router = useRouter()
@@ -29,6 +28,7 @@ export default function UploadPage() {
         if (selectedFile) {
             const url = URL.createObjectURL(selectedFile)
             setPreview(url)
+            console.log("File selected:", selectedFile.name, selectedFile.size, selectedFile.type)
         } else {
             setPreview(null)
         }
@@ -52,23 +52,32 @@ export default function UploadPage() {
             formData.append("category", category)
             formData.append("description", description)
 
-            const result = await uploadImage(formData)
+            console.log("Submitting via API Route...")
 
-            if (result.error) {
-                setMessage({ type: 'error', text: result.error })
-            } else {
-                setMessage({ type: 'success', text: "Image uploaded successfully!" })
-                setTitle("")
-                setDescription("")
-                setFile(null)
-                setPreview(null)
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            })
 
-                setTimeout(() => router.push("/admin/gallery"), 1500)
+            const result = await response.json()
+
+            if (!response.ok) {
+                console.error("API Error Response:", result)
+                throw new Error(result.error || "Upload failed")
             }
 
+            console.log("Upload Success:", result)
+            setMessage({ type: 'success', text: "Image uploaded successfully!" })
+            setTitle("")
+            setDescription("")
+            setFile(null)
+            setPreview(null)
+
+            setTimeout(() => router.push("/admin/gallery"), 1500)
+
         } catch (error: any) {
-            console.error("Client Catch:", error)
-            setMessage({ type: 'error', text: "Unexpected client error: " + error.message })
+            console.error("Client Upload Catch:", error)
+            setMessage({ type: 'error', text: "Error: " + error.message })
         } finally {
             setUploading(false)
         }
@@ -105,7 +114,14 @@ export default function UploadPage() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">File *</label>
-                        <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" required />
+                        <input
+                            id="file-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+                            required
+                        />
 
                         {preview && (
                             <div className="mt-4">
