@@ -25,8 +25,17 @@ export default function UploadPage() {
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault()
+        console.log("Upload started...")
         setUploading(true)
         setMessage(null)
+
+        const { data: { session }, error: authError } = await supabase.auth.getSession()
+        if (authError || !session) {
+            console.error("Auth Error:", authError)
+            setMessage({ type: 'error', text: "You must be logged in to upload." })
+            setUploading(false)
+            return
+        }
 
         if (!file || !title) {
             setMessage({ type: 'error', text: "Please select a file and enter a title." })
@@ -35,27 +44,41 @@ export default function UploadPage() {
         }
 
         if (galleryCount !== null && galleryCount >= 150) {
-            setMessage({ type: 'error', text: "Gallery limit reached (150 images). Cannot upload more." })
+            setMessage({ type: 'error', text: "Gallery limit reached (150 images)." })
             setUploading(false)
             return
         }
 
         try {
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${Date.now()}.${fileExt}`
-            const filePath = `${fileName}`
+            const fileExt = file.name.split('.').pop() || 'jpg'
+            // Sanitize filename to avoid path issues
+            const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+            const fileName = `${Date.now()}_${safeTitle}.${fileExt}`
+            const filePath = fileName // Simple path
+
+            console.log("Uploading to bucket 'gallery-images' at path:", filePath)
 
             // Upload to Storage
-            const { error: uploadError } = await supabase.storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
                 .from("gallery-images")
-                .upload(filePath, file)
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
 
-            if (uploadError) throw uploadError
+            if (uploadError) {
+                console.error("Storage Upload Error:", uploadError)
+                throw new Error(`Storage Error: ${uploadError.message}`)
+            }
+
+            console.log("Upload success, data:", uploadData)
 
             // Get Public URL
             const { data: { publicUrl } } = supabase.storage
                 .from("gallery-images")
                 .getPublicUrl(filePath)
+
+            console.log("Got public URL:", publicUrl)
 
             // Insert into DB
             const { error: dbError } = await supabase.from("gallery").insert({
@@ -63,10 +86,13 @@ export default function UploadPage() {
                 description,
                 category,
                 image_url: publicUrl,
-                display_order: 0 // Default
+                display_order: 0
             })
 
-            if (dbError) throw dbError
+            if (dbError) {
+                console.error("DB Insert Error:", dbError)
+                throw new Error(`Database Error: ${dbError.message}`)
+            }
 
             setMessage({ type: 'success', text: "Image uploaded successfully!" })
             setTitle("")
@@ -74,12 +100,11 @@ export default function UploadPage() {
             setFile(null)
             setGalleryCount(prev => (prev || 0) + 1)
 
-            // Optional: Redirect after delay
             setTimeout(() => router.push("/admin"), 1500)
 
         } catch (error: any) {
-            console.error(error)
-            setMessage({ type: 'error', text: error.message || "Upload failed." })
+            console.error("Handle Upload Catch:", error)
+            setMessage({ type: 'error', text: error.message || "Upload failed. Check console." })
         } finally {
             setUploading(false)
         }
