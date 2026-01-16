@@ -47,14 +47,14 @@ export default function UploadPage() {
 
             // Upload to Storage
             const { error: uploadError } = await supabase.storage
-                .from("gallery")
+                .from("gallery-images")
                 .upload(filePath, file)
 
             if (uploadError) throw uploadError
 
             // Get Public URL
             const { data: { publicUrl } } = supabase.storage
-                .from("gallery")
+                .from("gallery-images")
                 .getPublicUrl(filePath)
 
             // Insert into DB
