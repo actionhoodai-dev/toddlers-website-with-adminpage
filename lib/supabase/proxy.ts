@@ -8,8 +8,12 @@ export async function updateProxy(request: NextRequest) {
         },
     })
 
-    const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+    const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+
+    if (!envUrl || !envKey) {
+        console.error("PROXY ERROR: Supabase environment variables are missing!")
+    }
 
     const supabaseUrl = (envUrl && envUrl.startsWith("http")) ? envUrl : "https://example.supabase.co"
     const supabaseKey = (envKey && envKey.length > 0) ? envKey : "example-key"
