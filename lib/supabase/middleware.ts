@@ -1,30 +1,33 @@
-import { createClient } from "@supabase/supabase-js"
+import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
-    const response = NextResponse.next()
+    let response = NextResponse.next({
+        request: {
+            headers: request.headers,
+        },
+    })
 
-    // Get the session token from cookies
-    const accessToken = request.cookies.get("sb-access-token")?.value
-    const refreshToken = request.cookies.get("sb-refresh-token")?.value
-
-    // Create Supabase client
-    const supabase = createClient(
+    const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return request.cookies.getAll()
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        request.cookies.set(name, value)
+                        response.cookies.set(name, value, options)
+                    })
+                },
+            },
+        }
     )
 
-    let user = null
-
-    // If we have tokens, try to get the user
-    if (accessToken && refreshToken) {
-        try {
-            const { data: { user: authUser } } = await supabase.auth.getUser(accessToken)
-            user = authUser
-        } catch (error) {
-            console.error("Auth error in middleware:", error)
-        }
-    }
+    // IMPORTANT: You *must* call getUser to refresh the auth token!
+    const { data: { user } } = await supabase.auth.getUser()
 
     // Protect all /admin routes except /admin/login
     if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
@@ -35,12 +38,15 @@ export async function updateSession(request: NextRequest) {
         }
     }
 
-    // Redirect to /admin if already logged in and visiting /admin/login
+    // Redirect logic removed as per user request
+    // "THE PAGE SHOULD NT REDIRECT TO ADMIN PAGE WHEN IM LOGIN"
+    /*
     if (request.nextUrl.pathname.startsWith("/admin/login") && user) {
         const url = request.nextUrl.clone()
         url.pathname = "/admin"
         return NextResponse.redirect(url)
     }
+    */
 
     return response
 }
