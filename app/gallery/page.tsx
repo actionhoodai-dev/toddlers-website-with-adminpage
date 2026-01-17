@@ -10,7 +10,6 @@ interface GalleryImage {
   description: string | null
   image_url: string
   created_at: string
-  visible: boolean
 }
 
 export default function Gallery() {
@@ -25,8 +24,7 @@ export default function Gallery() {
         const { data, error } = await supabase
           .from("gallery")
           .select("*")
-          .eq("visible", true)
-          .order("order", { ascending: true })
+          .order("display_order", { ascending: true })
 
         if (error) throw error
         setImages(data || [])
