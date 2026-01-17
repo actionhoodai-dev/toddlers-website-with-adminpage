@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         const buffer = Buffer.from(arrayBuffer)
 
         // Upload
+        console.log("Starting Storage Upload:", fileName)
         const { error: uploadError } = await supabaseAdmin.storage
             .from("gallery-images")
             .upload(fileName, buffer, {
@@ -41,14 +42,17 @@ export async function POST(request: Request) {
             })
 
         if (uploadError) {
-            console.error("API Storage Error:", uploadError)
+            console.error("API Storage Error Details:", uploadError)
             return NextResponse.json({ error: `Storage Error: ${uploadError.message}` }, { status: 500 })
         }
+        console.log("Storage Upload Success")
 
         // Get URL
         const { data: { publicUrl } } = supabaseAdmin.storage
             .from("gallery-images")
             .getPublicUrl(fileName)
+
+        console.log("Public URL generated:", publicUrl)
 
         // DB Insert
         const { error: dbError } = await supabaseAdmin.from("gallery").insert({
@@ -60,9 +64,11 @@ export async function POST(request: Request) {
         })
 
         if (dbError) {
-            console.error("API DB Error:", dbError)
+            console.error("API Database Error Details:", dbError)
             return NextResponse.json({ error: `Database Error: ${dbError.message}` }, { status: 500 })
         }
+
+        console.log("Database Insert Success")
 
         return NextResponse.json({ success: true, url: publicUrl })
     } catch (error: any) {

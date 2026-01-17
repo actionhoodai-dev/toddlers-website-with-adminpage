@@ -10,7 +10,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
     }
 }
 
+const validUrl = (supabaseUrl && supabaseUrl.startsWith("http")) ? supabaseUrl : "https://example.supabase.co"
+const validKey = (supabaseAnonKey && supabaseAnonKey.length > 0) ? supabaseAnonKey : "example-key"
+
 export const supabase = createBrowserClient(
-    supabaseUrl || "https://placeholder.supabase.co",
-    supabaseAnonKey || "placeholder-key"
+    validUrl,
+    validKey
 )

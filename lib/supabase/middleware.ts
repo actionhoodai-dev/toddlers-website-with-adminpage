@@ -8,9 +8,15 @@ export async function updateSession(request: NextRequest) {
         },
     })
 
+    const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    const supabaseUrl = (envUrl && envUrl.startsWith("http")) ? envUrl : "https://example.supabase.co"
+    const supabaseKey = (envKey && envKey.length > 0) ? envKey : "example-key"
+
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseKey,
         {
             cookies: {
                 getAll() {
