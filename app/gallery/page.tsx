@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader } from "lucide-react"
+import { Loader, X } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 
 interface GalleryImage {
@@ -9,6 +9,7 @@ interface GalleryImage {
   title: string
   description: string | null
   image_url: string
+  category: string
   created_at: string
 }
 
@@ -24,6 +25,7 @@ export default function Gallery() {
         const { data, error } = await supabase
           .from("gallery")
           .select("*")
+          .order("category", { ascending: true })
           .order("display_order", { ascending: true })
 
         if (error) throw error
@@ -38,6 +40,19 @@ export default function Gallery() {
     fetchImages()
   }, [])
 
+  // Group images by category alphabetically
+  const groupedImages = images.reduce((acc, image) => {
+    const category = image.category || "uncategorized"
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(image)
+    return acc
+  }, {} as Record<string, GalleryImage[]>)
+
+  // Sort categories alphabetically
+  const sortedCategories = Object.keys(groupedImages).sort()
+
   return (
     <main className="min-h-screen pt-16">
       {/* Hero */}
@@ -50,7 +65,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Gallery Grid */}
+      {/* Gallery Grid - Grouped by Category */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-6xl mx-auto">
           {loading ? (
@@ -63,23 +78,39 @@ export default function Gallery() {
               <p className="text-sm text-muted-foreground mt-2">Check back for updates!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[300px]">
-              {images.map((image) => (
-                <div
-                  key={image.id}
-                  className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer h-full animate-fade-in-up hover:shadow-lg transition-all"
-                  onClick={() => setSelectedImage(image)}
-                >
-                  <img
-                    src={image.image_url || "/placeholder.svg"}
-                    alt={image.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                    <div>
-                      <h3 className="text-white font-semibold">{image.title}</h3>
-                      {image.description && <p className="text-white/80 text-sm">{image.description}</p>}
-                    </div>
+            <div className="space-y-12">
+              {sortedCategories.map((category) => (
+                <div key={category} className="animate-fade-in-up">
+                  {/* Category Heading */}
+                  <h2 className="text-3xl font-bold text-foreground mb-6 capitalize flex items-center gap-3">
+                    <span className="text-primary">📁</span>
+                    {category}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({groupedImages[category].length})
+                    </span>
+                  </h2>
+
+                  {/* Images Grid for this Category */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[300px]">
+                    {groupedImages[category].map((image) => (
+                      <div
+                        key={image.id}
+                        className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer h-full hover:shadow-lg transition-all"
+                        onClick={() => setSelectedImage(image)}
+                      >
+                        <img
+                          src={image.image_url || "/placeholder.svg"}
+                          alt={image.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                          <div>
+                            <h3 className="text-white font-semibold">{image.title}</h3>
+                            {image.description && <p className="text-white/80 text-sm">{image.description}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -88,13 +119,22 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal with Close Button */}
       {selectedImage && (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-fade-in-up"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="bg-card rounded-lg overflow-hidden max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg overflow-hidden max-w-3xl w-full relative" onClick={(e) => e.stopPropagation()}>
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+              aria-label="Close image viewer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
             <img
               src={selectedImage.image_url || "/placeholder.svg"}
               alt={selectedImage.title}
