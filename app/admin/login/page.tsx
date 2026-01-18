@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-teal-50 px-4 py-12">
             {configWarning && (
                 <div className="bg-red-600 text-white p-4 rounded-lg mb-8 text-center animate-pulse shadow-lg font-bold">
-                    ⚠️ SERVER CONFIGURATION ERROR: <br />
+                    SERVER CONFIGURATION ERROR: <br />
                     Missing Supabase URL or Key in Vercel settings. <br />
                     Please add them to Vercel and Redeploy.
                 </div>

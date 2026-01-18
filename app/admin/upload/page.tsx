@@ -119,7 +119,7 @@ export default function UploadPage() {
                             <span className="text-gray-700">Current Images: <strong>{currentCount}</strong></span>
                             <span className="text-gray-700">Max Allowed: <strong>{settings.max_gallery_images}</strong></span>
                             <span className={`font-semibold ${settings.gallery_enabled ? 'text-green-600' : 'text-red-600'}`}>
-                                {settings.gallery_enabled ? '✓ Uploads Enabled' : '✗ Uploads Disabled'}
+                                {settings.gallery_enabled ? 'Uploads Enabled' : 'Uploads Disabled'}
                             </span>
                         </div>
                     </div>
@@ -128,13 +128,13 @@ export default function UploadPage() {
                 {/* Warning Messages */}
                 {!loading && !settings?.gallery_enabled && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                        <strong>⚠ Gallery Uploads Disabled:</strong> Gallery uploads are currently disabled in settings.
+                        <strong>Warning:</strong> Gallery uploads are currently disabled in settings.
                     </div>
                 )}
 
                 {!loading && settings?.gallery_enabled && currentCount >= settings?.max_gallery_images && (
                     <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-orange-700">
-                        <strong>⚠ Gallery Full:</strong> Maximum {settings.max_gallery_images} images reached. Please delete some images before uploading.
+                        <strong>Warning:</strong> Maximum {settings.max_gallery_images} images reached. Please delete some images before uploading.
                     </div>
                 )}
 
@@ -199,8 +199,8 @@ export default function UploadPage() {
 
                     {message && (
                         <div className={`p-3 rounded-lg ${message.type === 'error' ? 'bg-red-50 text-red-600' :
-                                message.type === 'warning' ? 'bg-orange-50 text-orange-600' :
-                                    'bg-green-50 text-green-600'
+                            message.type === 'warning' ? 'bg-orange-50 text-orange-600' :
+                                'bg-green-50 text-green-600'
                             }`}>
                             {message.text}
                         </div>

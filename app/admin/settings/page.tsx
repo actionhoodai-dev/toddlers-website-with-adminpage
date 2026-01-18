@@ -64,14 +64,14 @@ export default function SettingsPage() {
 
             if (error) {
                 console.error("Settings save error:", error)
-                setMessage("❌ Error saving settings: " + error.message)
+                setMessage("Error saving settings: " + error.message)
             } else {
-                setMessage("✅ Settings saved successfully!")
+                setMessage("Settings saved successfully!")
                 setTimeout(() => setMessage(""), 3000)
             }
         } catch (err: any) {
             console.error("Unexpected save error:", err)
-            setMessage("❌ Unexpected error: " + err.message)
+            setMessage("Unexpected error: " + err.message)
         } finally {
             setSaving(false)
         }
@@ -119,7 +119,7 @@ export default function SettingsPage() {
                             </div>
 
                             {message && (
-                                <div className={`p-3 rounded-lg text-sm ${message.includes("Error") || message.includes("❌") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+                                <div className={`p-3 rounded-lg text-sm ${message.includes("Error") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
                                     {message}
                                 </div>
                             )}

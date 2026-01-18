@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase/client"
 import Link from "next/link"
+import { Folder } from "lucide-react"
 
 interface GalleryImage {
     id: string
@@ -235,7 +236,7 @@ export default function AdminGalleryPage() {
                         {categories.map(category => (
                             <div key={category} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                                 <h2 className="text-xl font-bold text-gray-800 mb-4 capitalize flex items-center gap-2">
-                                    <span className="text-teal-600">📁</span>
+                                    <Folder className="w-5 h-5 text-teal-600" />
                                     {category}
                                     <span className="text-sm font-normal text-gray-500">({groupedImages[category].length})</span>
                                 </h2>
