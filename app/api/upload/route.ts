@@ -25,6 +25,40 @@ export async function POST(request: Request) {
             process.env.SUPABASE_SERVICE_ROLE_KEY
         )
 
+        // Check site settings before upload
+        const { data: settings, error: settingsError } = await supabaseAdmin
+            .from("site_settings")
+            .select("*")
+            .single()
+
+        if (settingsError) {
+            console.error("Settings fetch error:", settingsError)
+            return NextResponse.json({ error: "Unable to verify site settings" }, { status: 500 })
+        }
+
+        // Check if gallery is enabled
+        if (!settings.gallery_enabled) {
+            return NextResponse.json({
+                error: "Gallery uploads are currently disabled. Please contact the administrator."
+            }, { status: 403 })
+        }
+
+        // Check current image count against max limit
+        const { count: currentCount, error: countError } = await supabaseAdmin
+            .from("gallery")
+            .select("*", { count: "exact", head: true })
+
+        if (countError) {
+            console.error("Count query error:", countError)
+            return NextResponse.json({ error: "Unable to verify image count" }, { status: 500 })
+        }
+
+        if (currentCount && currentCount >= settings.max_gallery_images) {
+            return NextResponse.json({
+                error: `Gallery is full. Maximum ${settings.max_gallery_images} images allowed. Please delete some images before uploading.`
+            }, { status: 403 })
+        }
+
         const fileExt = file.name.split(".").pop() || "jpg"
         const safeTitle = title.replace(/[^a-z0-9]/gi, "_").toLowerCase()
         const fileName = `${Date.now()}_${safeTitle}.${fileExt}`

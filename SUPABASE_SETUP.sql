@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
+  phone VARCHAR(50),
   message TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -83,6 +84,7 @@ ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies
 DROP POLICY IF EXISTS "Public can insert messages" ON contact_messages;
 DROP POLICY IF EXISTS "Authenticated users can view messages" ON contact_messages;
+DROP POLICY IF EXISTS "Authenticated users can delete messages" ON contact_messages;
 
 -- Create policies
 CREATE POLICY "Public can insert messages" ON contact_messages
@@ -90,6 +92,9 @@ CREATE POLICY "Public can insert messages" ON contact_messages
 
 CREATE POLICY "Authenticated users can view messages" ON contact_messages
   FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can delete messages" ON contact_messages
+  FOR DELETE TO authenticated USING (true);
 
 -- ================================================
 -- 3. CREATE SITE SETTINGS TABLE

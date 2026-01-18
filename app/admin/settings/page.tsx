@@ -5,18 +5,31 @@ import { supabase } from "@/lib/supabase/client"
 import Link from "next/link"
 
 export default function SettingsPage() {
-    const [settings, setSettings] = useState<any>({ gallery_enabled: true, max_gallery_images: 150 })
+    const [settings, setSettings] = useState<any>({ id: 1, gallery_enabled: true, max_gallery_images: 150 })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState("")
 
     useEffect(() => {
         async function fetchSettings() {
-            const { data } = await supabase.from("site_settings").select("*").single()
+            const { data, error } = await supabase.from("site_settings").select("*").single()
+
             if (data) {
                 setSettings(data)
             } else {
-                // If no settings exist, maybe assume defaults and don't error blocking UI
+                // No settings exist - auto-create default row
+                console.log("No settings found, creating default...")
+                const { data: newData, error: insertError } = await supabase
+                    .from("site_settings")
+                    .insert({ id: 1, gallery_enabled: true, max_gallery_images: 150 })
+                    .select()
+                    .single()
+
+                if (newData) {
+                    setSettings(newData)
+                } else {
+                    console.error("Failed to create default settings:", insertError)
+                }
             }
             setLoading(false)
         }
@@ -27,23 +40,22 @@ export default function SettingsPage() {
         setSaving(true)
         setMessage("")
 
-        // Upsert settings (assuming single row with id=1 or similar, or just first row)
-        // If 'id' is in settings state, it updates. If not, it inserts.
-        // We need to ensure we have an ID if we want to update specific row, 
-        // or we rely on single row table constraint.
-
-        let payload = { ...settings }
-        if (!payload.id) {
-            // Simple case: try to just insert standard row if empty
+        // Ensure id is always 1 for single-row constraint
+        const payload = {
+            id: 1,
+            gallery_enabled: settings.gallery_enabled,
+            max_gallery_images: settings.max_gallery_images
         }
 
-        const { error } = await supabase.from("site_settings").upsert(payload)
+        const { error } = await supabase
+            .from("site_settings")
+            .upsert(payload, { onConflict: 'id' })
 
         if (error) {
-            console.error(error)
-            setMessage("Error saving settings.")
+            console.error("Settings save error:", error)
+            setMessage("Error saving settings: " + error.message)
         } else {
-            setMessage("Settings saved successfully.")
+            setMessage("Settings saved successfully!")
         }
         setSaving(false)
     }
