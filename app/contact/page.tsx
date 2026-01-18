@@ -20,14 +20,36 @@ export default function Contact() {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitted(true)
-      setLoading(false)
-      setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
+    try {
+      // Import supabase client
+      const { createClient } = await import("@supabase/supabase-js")
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
 
-      setTimeout(() => setSubmitted(false), 5000)
-    }, 1000)
+      // Insert into contact_messages table
+      const { error } = await supabase.from("contact_messages").insert({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: `${formData.subject ? `[${formData.subject}] ` : ""}${formData.message}`,
+      })
+
+      if (error) {
+        console.error("Error submitting contact form:", error)
+        alert("Error submitting form. Please try again.")
+      } else {
+        setSubmitted(true)
+        setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
+        setTimeout(() => setSubmitted(false), 5000)
+      }
+    } catch (error) {
+      console.error("Contact form error:", error)
+      alert("Error submitting form. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

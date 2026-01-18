@@ -12,26 +12,36 @@ export default function SettingsPage() {
 
     useEffect(() => {
         async function fetchSettings() {
-            const { data, error } = await supabase.from("site_settings").select("*").single()
+            try {
+                const { data, error } = await supabase.from("site_settings").select("*").single()
 
-            if (data) {
-                setSettings(data)
-            } else {
-                // No settings exist - auto-create default row
-                console.log("No settings found, creating default...")
-                const { data: newData, error: insertError } = await supabase
-                    .from("site_settings")
-                    .insert({ id: 1, gallery_enabled: true, max_gallery_images: 150 })
-                    .select()
-                    .single()
+                if (data) {
+                    setSettings(data)
+                } else if (error && error.code === 'PGRST116') {
+                    // No settings exist - auto-create default row
+                    console.log("No settings found, creating default...")
+                    const { data: newData, error: insertError } = await supabase
+                        .from("site_settings")
+                        .insert({ id: 1, gallery_enabled: true, max_gallery_images: 150 })
+                        .select()
+                        .single()
 
-                if (newData) {
-                    setSettings(newData)
+                    if (newData) {
+                        setSettings(newData)
+                    } else {
+                        console.error("Failed to create default settings:", insertError)
+                        setMessage("Error: Could not create default settings")
+                    }
                 } else {
-                    console.error("Failed to create default settings:", insertError)
+                    console.error("Settings fetch error:", error)
+                    setMessage("Error loading settings")
                 }
+            } catch (err) {
+                console.error("Unexpected error:", err)
+                setMessage("Unexpected error loading settings")
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
         fetchSettings()
     }, [])
@@ -40,24 +50,31 @@ export default function SettingsPage() {
         setSaving(true)
         setMessage("")
 
-        // Ensure id is always 1 for single-row constraint
-        const payload = {
-            id: 1,
-            gallery_enabled: settings.gallery_enabled,
-            max_gallery_images: settings.max_gallery_images
-        }
+        try {
+            // Ensure id is always 1 for single-row constraint
+            const payload = {
+                id: 1,
+                gallery_enabled: settings.gallery_enabled,
+                max_gallery_images: settings.max_gallery_images
+            }
 
-        const { error } = await supabase
-            .from("site_settings")
-            .upsert(payload, { onConflict: 'id' })
+            const { error } = await supabase
+                .from("site_settings")
+                .upsert(payload, { onConflict: 'id' })
 
-        if (error) {
-            console.error("Settings save error:", error)
-            setMessage("Error saving settings: " + error.message)
-        } else {
-            setMessage("Settings saved successfully!")
+            if (error) {
+                console.error("Settings save error:", error)
+                setMessage("❌ Error saving settings: " + error.message)
+            } else {
+                setMessage("✅ Settings saved successfully!")
+                setTimeout(() => setMessage(""), 3000)
+            }
+        } catch (err: any) {
+            console.error("Unexpected save error:", err)
+            setMessage("❌ Unexpected error: " + err.message)
+        } finally {
+            setSaving(false)
         }
-        setSaving(false)
     }
 
     return (
@@ -74,7 +91,12 @@ export default function SettingsPage() {
                     ) : (
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
-                                <label className="font-medium text-gray-700">Gallery Enabled</label>
+                                <div>
+                                    <label className="font-medium text-gray-700">Gallery Enabled</label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        When disabled, no new images can be uploaded
+                                    </p>
+                                </div>
                                 <input
                                     type="checkbox"
                                     checked={settings.gallery_enabled}
@@ -87,14 +109,20 @@ export default function SettingsPage() {
                                 <label className="block font-medium text-gray-700 mb-2">Max Gallery Images</label>
                                 <input
                                     type="number"
+                                    min="1"
+                                    max="1000"
                                     value={settings.max_gallery_images}
-                                    onChange={e => setSettings({ ...settings, max_gallery_images: parseInt(e.target.value) })}
+                                    onChange={e => setSettings({ ...settings, max_gallery_images: parseInt(e.target.value) || 1 })}
                                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
                                 />
-                                <p className="text-sm text-gray-500 mt-1">Controls the hard limit for uploads.</p>
+                                <p className="text-sm text-gray-500 mt-1">Controls the hard limit for uploads. Upload API enforces this.</p>
                             </div>
 
-                            {message && <p className={`text-sm ${message.includes("Error") ? "text-red-500" : "text-green-500"}`}>{message}</p>}
+                            {message && (
+                                <div className={`p-3 rounded-lg text-sm ${message.includes("Error") || message.includes("❌") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+                                    {message}
+                                </div>
+                            )}
 
                             <button
                                 onClick={handleSave}

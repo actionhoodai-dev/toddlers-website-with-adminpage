@@ -12,8 +12,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState({
         gallery: 0,
-        messages: 0,
-        views: 0
+        messages: 0
     })
 
     useEffect(() => {
@@ -25,17 +24,15 @@ export default function AdminDashboard() {
             }
             setUser(user)
 
-            // Fetch Stats
-            const [galleryRes, messagesRes, viewsRes] = await Promise.all([
+            // Fetch Stats (removed page_views)
+            const [galleryRes, messagesRes] = await Promise.all([
                 supabase.from("gallery").select("*", { count: "exact", head: true }),
-                supabase.from("contact_messages").select("*", { count: "exact", head: true }),
-                supabase.from("page_views").select("*", { count: "exact", head: true })
+                supabase.from("contact_messages").select("*", { count: "exact", head: true })
             ])
 
             setStats({
                 gallery: galleryRes.count || 0,
-                messages: messagesRes.count || 0,
-                views: viewsRes.count || 0
+                messages: messagesRes.count || 0
             })
 
             setLoading(false)
@@ -72,22 +69,20 @@ export default function AdminDashboard() {
             </header>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* Stats - Removed Total Views */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <StatsCard title="Gallery Images" count={stats.gallery} icon="image" color="teal" />
                     <StatsCard title="Contact Submissions" count={stats.messages} icon="mail" color="blue" />
-                    <StatsCard title="Total Views" count={stats.views} icon="chart" color="purple" />
                 </div>
 
-                {/* Quick Actions */}
+                {/* Quick Actions - Removed Analytics */}
                 <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mb-8">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <QuickAction href="/admin/upload" label="Upload Image" icon="upload" color="teal" />
                         <QuickAction href="/admin/gallery" label="Manage Gallery" icon="image" color="teal" />
                         <QuickAction href="/admin/messages" label="View Messages" icon="mail-open" color="blue" />
                         <QuickAction href="/admin/settings" label="Settings" icon="settings" color="purple" />
-                        <QuickAction href="/admin/analytics" label="Analytics" icon="chart-bar" color="green" />
                     </div>
                 </div>
 
@@ -125,8 +120,7 @@ function QuickAction({ href, label, icon, color }: any) {
     const colors: any = {
         teal: "bg-teal-50 hover:bg-teal-100 text-teal-600 border-teal-200",
         blue: "bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200",
-        purple: "bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200",
-        green: "bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
+        purple: "bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200"
     }
     return (
         <Link href={href} className={`flex items-center gap-3 p-4 rounded-lg transition-colors border ${colors[color]}`}>

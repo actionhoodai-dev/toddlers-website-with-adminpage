@@ -19,6 +19,10 @@ export default function AdminGalleryPage() {
     const [loading, setLoading] = useState(true)
     const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
     const [deleting, setDeleting] = useState(false)
+    const [selectMode, setSelectMode] = useState(false) // NEW: explicit select mode
+    const [previewImage, setPreviewImage] = useState<GalleryImage | null>(null) // NEW: for preview/edit modal
+    const [editData, setEditData] = useState<{ title: string; description: string; category: string }>({ title: "", description: "", category: "general" })
+    const [saving, setSaving] = useState(false)
 
     useEffect(() => {
         fetchImages()
@@ -82,6 +86,7 @@ export default function AdminGalleryPage() {
 
             alert(`Successfully deleted ${selectedImages.size} image(s)`)
             setSelectedImages(new Set())
+            setSelectMode(false) // Exit select mode after delete
             fetchImages()
         } catch (error) {
             console.error("Delete error:", error)
@@ -107,12 +112,52 @@ export default function AdminGalleryPage() {
             await supabase.from("gallery").delete().eq("id", img.id)
 
             alert("Image deleted successfully")
+            setPreviewImage(null) // Close modal after delete
             fetchImages()
         } catch (error) {
             console.error("Delete error:", error)
             alert("Error deleting image. Please try again.")
         } finally {
             setDeleting(false)
+        }
+    }
+
+    // NEW: Open preview/edit modal
+    const openPreview = (img: GalleryImage) => {
+        setPreviewImage(img)
+        setEditData({
+            title: img.title,
+            description: img.description,
+            category: img.category
+        })
+    }
+
+    // NEW: Save edited metadata
+    const handleSaveEdit = async () => {
+        if (!previewImage) return
+
+        setSaving(true)
+        try {
+            const { error } = await supabase
+                .from("gallery")
+                .update({
+                    title: editData.title,
+                    description: editData.description,
+                    category: editData.category,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", previewImage.id)
+
+            if (error) throw error
+
+            alert("Image updated successfully!")
+            setPreviewImage(null)
+            fetchImages()
+        } catch (error) {
+            console.error("Update error:", error)
+            alert("Error updating image. Please try again.")
+        } finally {
+            setSaving(false)
         }
     }
 
@@ -135,24 +180,46 @@ export default function AdminGalleryPage() {
                         <p className="text-sm text-gray-600 mt-1">Total: {images.length} images</p>
                     </div>
                     <div className="space-x-4 flex items-center">
-                        {selectedImages.size > 0 && (
-                            <button
-                                onClick={handleDeleteSelected}
-                                disabled={deleting}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-                            >
-                                {deleting ? "Deleting..." : `Delete Selected (${selectedImages.size})`}
-                            </button>
+                        {selectMode ? (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setSelectMode(false)
+                                        setSelectedImages(new Set())
+                                    }}
+                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                >
+                                    Cancel Selection
+                                </button>
+                                {selectedImages.size > 0 && (
+                                    <button
+                                        onClick={handleDeleteSelected}
+                                        disabled={deleting}
+                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                                    >
+                                        {deleting ? "Deleting..." : `Delete Selected (${selectedImages.size})`}
+                                    </button>
+                                )}
+                                <button
+                                    onClick={selectAll}
+                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                >
+                                    {selectedImages.size === images.length ? "Deselect All" : "Select All"}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => setSelectMode(true)}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                >
+                                    Select Multiple
+                                </button>
+                                <Link href="/admin/upload" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                                    Upload New
+                                </Link>
+                            </>
                         )}
-                        <button
-                            onClick={selectAll}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-                        >
-                            {selectedImages.size === images.length ? "Deselect All" : "Select All"}
-                        </button>
-                        <Link href="/admin/upload" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-                            Upload New
-                        </Link>
                         <Link href="/admin" className="px-4 py-2 text-gray-600 hover:text-gray-900">
                             Dashboard
                         </Link>
@@ -176,35 +243,32 @@ export default function AdminGalleryPage() {
                                     {groupedImages[category].map(img => (
                                         <div
                                             key={img.id}
-                                            className={`relative bg-white rounded-lg border-2 overflow-hidden group cursor-pointer transition-all ${selectedImages.has(img.id) ? 'border-teal-500 ring-2 ring-teal-200' : 'border-gray-200 hover:border-gray-300'
+                                            className={`relative bg-white rounded-lg border-2 overflow-hidden group transition-all ${selectMode
+                                                ? selectedImages.has(img.id)
+                                                    ? 'border-teal-500 ring-2 ring-teal-200'
+                                                    : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                                                : 'border-gray-200 hover:border-gray-300 cursor-pointer'
                                                 }`}
-                                            onClick={() => toggleSelection(img.id)}
+                                            onClick={() => {
+                                                if (selectMode) {
+                                                    toggleSelection(img.id)
+                                                } else {
+                                                    openPreview(img)
+                                                }
+                                            }}
                                         >
-                                            {/* Selection Checkbox */}
-                                            <div className="absolute top-2 left-2 z-10">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedImages.has(img.id)}
-                                                    onChange={() => toggleSelection(img.id)}
-                                                    className="h-5 w-5 rounded"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                            </div>
-
-                                            {/* Delete Button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    handleDeleteSingle(img)
-                                                }}
-                                                disabled={deleting}
-                                                className="absolute top-2 right-2 z-10 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                                                title="Delete this image"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
+                                            {/* Selection Checkbox - only visible in select mode */}
+                                            {selectMode && (
+                                                <div className="absolute top-2 left-2 z-10">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedImages.has(img.id)}
+                                                        onChange={() => toggleSelection(img.id)}
+                                                        className="h-5 w-5 rounded"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            )}
 
                                             <div className="aspect-square relative">
                                                 <img
@@ -228,6 +292,95 @@ export default function AdminGalleryPage() {
                     </div>
                 )}
             </div>
+
+            {/* Preview/Edit Modal */}
+            {previewImage && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setPreviewImage(null)}>
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <h2 className="text-2xl font-bold text-gray-800">Edit Image</h2>
+                                <button
+                                    onClick={() => setPreviewImage(null)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Image Preview */}
+                                <div>
+                                    <img
+                                        src={previewImage.image_url}
+                                        alt={previewImage.title}
+                                        className="w-full rounded-lg border border-gray-200"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Uploaded: {new Date(previewImage.created_at).toLocaleString()}
+                                    </p>
+                                </div>
+
+                                {/* Edit Form */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                                        <input
+                                            type="text"
+                                            value={editData.title}
+                                            onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                        <textarea
+                                            value={editData.description}
+                                            onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                            rows={4}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                        <select
+                                            value={editData.category}
+                                            onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                        >
+                                            <option value="general">General</option>
+                                            <option value="therapy">Therapy</option>
+                                            <option value="facilities">Facilities</option>
+                                            <option value="events">Events</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4">
+                                        <button
+                                            onClick={handleSaveEdit}
+                                            disabled={saving}
+                                            className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+                                        >
+                                            {saving ? "Saving..." : "Save Changes"}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteSingle(previewImage)}
+                                            disabled={deleting}
+                                            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                                        >
+                                            {deleting ? "Deleting..." : "Delete Image"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
