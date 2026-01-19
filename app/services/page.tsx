@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronDown } from "lucide-react"
-
 const services = [
   {
     title: "Occupational therapy",
     description:
       "Occupational therapy helps individuals of all ages develop, maintain, or regain the skills needed for daily living and work.",
+    image: "/service-occupational-therapy.jpg",
     details: [
       "Helps develop motor skills and hand-eye coordination",
       "Assists in improving self-care abilities",
@@ -20,6 +18,7 @@ const services = [
     title: "Physical therapy",
     description:
       "Physical therapy focuses on restoring mobility, strength, and function through evidence-based rehabilitation techniques.",
+    image: "/service-physical-therapy.jpg",
     details: [
       "Improves muscle strength and flexibility",
       "Restores mobility and range of motion",
@@ -32,6 +31,7 @@ const services = [
     title: "Special education",
     description:
       "Special education provides customized learning programs for children with developmental and cognitive challenges.",
+    image: "/service-special-education.jpg",
     details: [
       "Personalized learning plans",
       "Small group and individual sessions",
@@ -43,6 +43,7 @@ const services = [
   {
     title: "Speech therapy",
     description: "Speech therapy addresses communication and swallowing disorders with specialized interventions.",
+    image: "/service-speech-therapy.jpg",
     details: [
       "Speech and language development",
       "Articulation and pronunciation improvement",
@@ -54,8 +55,6 @@ const services = [
 ]
 
 export default function Services() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
-
   return (
     <main className="min-h-screen pt-16">
       {/* Hero */}
@@ -68,33 +67,31 @@ export default function Services() {
         </div>
       </section>
 
-      {/* Services List */}
+      {/* Services Grid */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="max-w-4xl mx-auto">
-          <div className="space-y-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {services.map((service, index) => (
               <div
                 key={index}
-                className="border border-border rounded-lg overflow-hidden transition-all animate-fade-in-up hover:border-primary/50"
+                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group animate-fade-in-up flex flex-col"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <button
-                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  className="w-full px-6 py-4 flex items-start justify-between hover:bg-muted/50 transition-colors text-left"
-                >
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{service.title}</h3>
-                    <p className="text-muted-foreground text-sm">{service.description}</p>
-                  </div>
-                  <ChevronDown
-                    className={`w-5 h-5 text-primary ml-4 flex-shrink-0 transition-transform ${
-                      openIndex === index ? "rotate-180" : ""
-                    }`}
+                {/* Service Image */}
+                <div className="h-56 w-full overflow-hidden border-b border-border">
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                </button>
+                </div>
 
-                {openIndex === index && (
-                  <div className="px-6 py-4 bg-muted/30 border-t border-border">
+                <div className="p-6 flex-1 flex flex-col">
+                  <h3 className="text-2xl font-bold text-foreground mb-3">{service.title}</h3>
+                  <p className="text-muted-foreground mb-6 text-lg leading-relaxed">{service.description}</p>
+
+                  <div className="mt-auto bg-muted/30 rounded-lg p-5 border border-border/50">
+                    <h4 className="font-semibold text-foreground mb-3 text-sm uppercase tracking-wider opacity-80">Key Benefits</h4>
                     <ul className="space-y-3">
                       {service.details.map((detail, i) => (
                         <li key={i} className="flex items-start gap-3">
@@ -104,7 +101,7 @@ export default function Services() {
                       ))}
                     </ul>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
