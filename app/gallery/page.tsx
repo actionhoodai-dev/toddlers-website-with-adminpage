@@ -116,30 +116,33 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Lightbox Modal with Close Button */}
+      {/* Lightbox Modal with Close Button and Premium Animations */}
       {selectedImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in-up duration-200"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="bg-card rounded-lg overflow-hidden max-w-4xl w-full relative animate-scale-in" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg overflow-hidden max-w-4xl w-full relative animate-scale-in shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Close Button */}
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 bg-black/70 hover:bg-black/90 text-white rounded-full p-2.5 sm:p-3 transition-all hover:scale-110 shadow-lg"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 bg-black/50 hover:bg-black/80 text-white rounded-full p-2 sm:p-3 transition-all hover:scale-110 shadow-lg backdrop-blur-sm group"
               aria-label="Close image viewer"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-300" />
             </button>
 
-            <img
-              src={selectedImage.image_url || "/placeholder.svg"}
-              alt={selectedImage.title}
-              className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain bg-black"
-            />
-            <div className="p-4 sm:p-6 bg-card">
+            <div className="relative bg-black/5">
+              <img
+                src={selectedImage.image_url || "/placeholder.svg"}
+                alt={selectedImage.title}
+                className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain mx-auto"
+              />
+            </div>
+
+            <div className="p-6 sm:p-8 bg-card animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">{selectedImage.title}</h2>
-              {selectedImage.description && <p className="text-sm sm:text-base text-muted-foreground">{selectedImage.description}</p>}
+              {selectedImage.description && <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{selectedImage.description}</p>}
             </div>
           </div>
         </div>

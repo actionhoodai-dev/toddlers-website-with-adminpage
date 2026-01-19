@@ -18,23 +18,33 @@ export default function Home() {
 
   return (
     <main className="overflow-hidden">
-      {/* Hero Section with Animated Background */}
-      <section className="relative min-h-screen bg-gradient-to-br from-background via-background to-muted flex items-center justify-center overflow-hidden pt-16">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-          <div
-            className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "1s" }}
-          ></div>
-          <div
-            className="absolute top-1/2 left-1/2 w-72 h-72 bg-accent/5 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "2s" }}
-          ></div>
+      {/* Hero Section with Background Image */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+        {/* Background Image & Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/hero-bg.jpg"
+            alt="Rehabilitation Center"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-background/80 bg-white/70 backdrop-blur-[2px]"></div>
+          {/* Subtle gradient overlay for extra depth without distracting */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-transparent to-background"></div>
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <div className="animate-hero-title">
+          {/* Logo with Animation */}
+          <div className="mb-8 flex justify-center animate-fade-in-up">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-white/50 backdrop-blur-sm p-1">
+              <img
+                src="/otf-logo.jpg"
+                alt="Occupational Therapy Foundation"
+                className="w-full h-full object-contain rounded-full"
+              />
+            </div>
+          </div>
+
+          <div className="animate-hero-title" style={{ animationDelay: "0.2s" }}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-12">
               Toddlers – Centre for Learning and Rehabilitation
             </h1>
@@ -42,7 +52,7 @@ export default function Home() {
 
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in-up"
-            style={{ animationDelay: "0.2s" }}
+            style={{ animationDelay: "0.4s" }}
           >
             <Link
               href="/contact"
@@ -52,7 +62,7 @@ export default function Home() {
             </Link>
             <Link
               href="/about"
-              className="px-8 py-4 bg-muted text-foreground font-semibold rounded-lg hover:bg-muted/80 transition-all border border-border"
+              className="px-8 py-4 bg-white/50 backdrop-blur-sm text-foreground font-semibold rounded-lg hover:bg-white/70 transition-all border border-foreground/10"
             >
               Learn More
             </Link>
@@ -61,26 +71,26 @@ export default function Home() {
           {/* Quick Stats */}
           <div
             className="grid grid-cols-3 gap-4 max-w-2xl mx-auto animate-fade-in-up"
-            style={{ animationDelay: "0.3s" }}
+            style={{ animationDelay: "0.6s" }}
           >
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white/60 backdrop-blur-md border border-white/20 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-primary">17+</div>
-              <div className="text-xs text-muted-foreground">Years Serving</div>
+              <div className="text-xs text-muted-foreground font-medium">Years Serving</div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white/60 backdrop-blur-md border border-white/20 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-accent">4+</div>
-              <div className="text-xs text-muted-foreground">Services</div>
+              <div className="text-xs text-muted-foreground font-medium">Services</div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white/60 backdrop-blur-md border border-white/20 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-secondary">1000+</div>
-              <div className="text-xs text-muted-foreground">Patients Helped</div>
+              <div className="text-xs text-muted-foreground font-medium">Patients Helped</div>
             </div>
           </div>
         </div>
 
         {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
-          <div className="w-6 h-10 border-2 border-primary rounded-full flex items-start justify-center p-2">
+          <div className="w-6 h-10 border-2 border-primary/50 text-primary rounded-full flex items-start justify-center p-2 backdrop-blur-sm bg-white/30">
             <div className="w-1 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
         </div>
