@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { WhatsAppButton } from "@/components/whatsapp-button"
+import { ScrollToTop } from "@/components/scroll-to-top"
 import "./globals.css"
 
 const geist = Geist({ subsets: ["latin"] })
@@ -98,6 +100,8 @@ export default function RootLayout({
           <Navbar />
           {children}
           <Footer />
+          <WhatsAppButton />
+          <ScrollToTop />
           <Analytics />
         </ErrorBoundary>
       </body>

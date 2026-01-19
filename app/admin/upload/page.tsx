@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
 import Link from "next/link"
+import imageCompression from "browser-image-compression"
 
 export default function UploadPage() {
     const router = useRouter()
@@ -17,6 +18,8 @@ export default function UploadPage() {
     const [settings, setSettings] = useState<any>(null)
     const [currentCount, setCurrentCount] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [compressing, setCompressing] = useState(false)
+    const [compressionInfo, setCompressionInfo] = useState<string | null>(null)
 
     useEffect(() => {
         async function fetchStatus() {
@@ -40,16 +43,61 @@ export default function UploadPage() {
         }
     }, [preview])
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0] || null
-        setFile(selectedFile)
 
-        if (selectedFile) {
-            const url = URL.createObjectURL(selectedFile)
-            setPreview(url)
-            console.log("File selected:", selectedFile.name, selectedFile.size, selectedFile.type)
-        } else {
+        if (!selectedFile) {
+            setFile(null)
             setPreview(null)
+            setCompressionInfo(null)
+            return
+        }
+
+        try {
+            setCompressing(true)
+            setCompressionInfo(null)
+            const originalSize = selectedFile.size
+
+            console.log("Original file:", selectedFile.name, (originalSize / 1024 / 1024).toFixed(2), "MB")
+
+            // Compression options - targeting ~1.5 MB
+            const options = {
+                maxSizeMB: 1.5,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+                fileType: selectedFile.type,
+            }
+
+            // Compress the image
+            const compressedFile = await imageCompression(selectedFile, options)
+            const compressedSize = compressedFile.size
+
+            console.log("Compressed file:", compressedFile.name, (compressedSize / 1024 / 1024).toFixed(2), "MB")
+
+            // Set the compressed file
+            setFile(compressedFile)
+
+            // Generate preview from compressed file
+            const url = URL.createObjectURL(compressedFile)
+            setPreview(url)
+
+            // Show compression info
+            const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(0)
+            setCompressionInfo(
+                `Image optimized: ${(originalSize / 1024 / 1024).toFixed(1)}MB → ${(compressedSize / 1024 / 1024).toFixed(1)}MB (${reduction}% reduction)`
+            )
+
+        } catch (error: any) {
+            console.error("Compression error:", error)
+            setMessage({
+                type: 'error',
+                text: "Failed to compress image. Please try a different image or contact support."
+            })
+            setFile(null)
+            setPreview(null)
+            setCompressionInfo(null)
+        } finally {
+            setCompressing(false)
         }
     }
 
@@ -186,8 +234,22 @@ export default function UploadPage() {
                             onChange={handleFileChange}
                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
                             required
-                            disabled={isUploadDisabled}
+                            disabled={isUploadDisabled || compressing}
                         />
+
+                        {compressing && (
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <span className="text-sm text-blue-700">Optimizing image for web...</span>
+                            </div>
+                        )}
+
+                        {compressionInfo && !compressing && (
+                            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <p className="text-sm text-green-700">{compressionInfo}</p>
+                                <p className="text-xs text-green-600 mt-1">Image optimized for web before upload</p>
+                            </div>
+                        )}
 
                         {preview && (
                             <div className="mt-4">
@@ -208,10 +270,10 @@ export default function UploadPage() {
 
                     <button
                         type="submit"
-                        disabled={uploading || isUploadDisabled}
+                        disabled={uploading || isUploadDisabled || compressing}
                         className="w-full bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {uploading ? "Uploading..." : isUploadDisabled ? "Upload Disabled" : "Upload Image"}
+                        {compressing ? "Processing Image..." : uploading ? "Uploading..." : isUploadDisabled ? "Upload Disabled" : "Upload Image"}
                     </button>
                 </form>
             </div>

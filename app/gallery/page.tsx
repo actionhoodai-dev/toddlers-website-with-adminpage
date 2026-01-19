@@ -88,22 +88,22 @@ export default function Gallery() {
                   </h2>
 
                   {/* Images Grid for this Category */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[250px] sm:auto-rows-[300px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {groupedImages[category].map((image) => (
                       <div
                         key={image.id}
-                        className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer h-full hover:shadow-lg transition-all"
+                        className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer h-64 sm:h-72 lg:h-80 hover:shadow-xl transition-all duration-300"
                         onClick={() => setSelectedImage(image)}
                       >
                         <img
                           src={image.image_url || "/placeholder.svg"}
                           alt={image.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 sm:p-6">
                           <div>
-                            <h3 className="text-white font-semibold text-sm sm:text-base">{image.title}</h3>
-                            {image.description && <p className="text-white/80 text-xs sm:text-sm">{image.description}</p>}
+                            <h3 className="text-white font-semibold text-sm sm:text-base mb-1">{image.title}</h3>
+                            {image.description && <p className="text-white/90 text-xs sm:text-sm line-clamp-2">{image.description}</p>}
                           </div>
                         </div>
                       </div>
@@ -119,14 +119,14 @@ export default function Gallery() {
       {/* Lightbox Modal with Close Button */}
       {selectedImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-fade-in-up"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="bg-card rounded-lg overflow-hidden max-w-3xl w-full relative" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg overflow-hidden max-w-4xl w-full relative animate-scale-in" onClick={(e) => e.stopPropagation()}>
             {/* Close Button */}
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 bg-black/70 hover:bg-black/90 text-white rounded-full p-2.5 sm:p-3 transition-all hover:scale-110 shadow-lg"
               aria-label="Close image viewer"
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -135,9 +135,9 @@ export default function Gallery() {
             <img
               src={selectedImage.image_url || "/placeholder.svg"}
               alt={selectedImage.title}
-              className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-cover"
+              className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain bg-black"
             />
-            <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-6 bg-card">
               <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">{selectedImage.title}</h2>
               {selectedImage.description && <p className="text-sm sm:text-base text-muted-foreground">{selectedImage.description}</p>}
             </div>

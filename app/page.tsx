@@ -34,23 +34,15 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <div className="animate-fade-in-up">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-balance mb-6 text-foreground">
-              Comprehensive{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                Rehabilitation
-              </span>{" "}
-              Care
+          <div className="animate-hero-title">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-12">
+              Toddlers – Centre for Learning and Rehabilitation
             </h1>
-            <p className="text-xl sm:text-2xl text-muted-foreground mb-8 text-balance max-w-3xl mx-auto leading-relaxed">
-              We foster a context of mutual respect and care which will help patients improve their health and the
-              general quality of community life.
-            </p>
           </div>
 
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in-up"
-            style={{ animationDelay: "0.1s" }}
+            style={{ animationDelay: "0.2s" }}
           >
             <Link
               href="/contact"
@@ -69,7 +61,7 @@ export default function Home() {
           {/* Quick Stats */}
           <div
             className="grid grid-cols-3 gap-4 max-w-2xl mx-auto animate-fade-in-up"
-            style={{ animationDelay: "0.2s" }}
+            style={{ animationDelay: "0.3s" }}
           >
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-3xl font-bold text-primary">17+</div>
@@ -95,9 +87,9 @@ export default function Home() {
       </section>
 
       {/* Services Preview */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Our Services</h2>
             <p className="text-lg text-muted-foreground">Evidence-based therapies tailored to your needs</p>
           </div>
@@ -130,9 +122,9 @@ export default function Home() {
       </section>
 
       {/* Clinical Conditions Preview Carousel */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Clinical Conditions We Treat</h2>
             <p className="text-lg text-muted-foreground">
               Expertise across pediatric and adult neurological conditions
@@ -165,9 +157,9 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Why Choose Toddlers?</h2>
           </div>
 
@@ -190,7 +182,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/10 to-accent/10">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/10 to-accent/10">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-4 text-foreground">Ready to Begin Your Journey?</h2>
           <p className="text-lg text-muted-foreground mb-8">

@@ -2,11 +2,16 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const pathname = usePathname()
+
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,16 +71,34 @@ export function Navbar() {
 
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 rounded-md text-foreground hover:bg-muted transition-colors"
+              className="lg:hidden p-2 rounded-md text-foreground hover:bg-muted transition-colors relative w-10 h-10 flex items-center justify-center"
+              aria-label="Toggle menu"
             >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
+              <span className="sr-only">Toggle menu</span>
+              <div className="w-6 h-5 relative flex flex-col justify-center">
+                <span
+                  className={`absolute w-full h-0.5 bg-current transition-all duration-200 ${isOpen ? "rotate-45 top-1/2 -translate-y-1/2" : "top-0"
+                    }`}
+                ></span>
+                <span
+                  className={`absolute w-full h-0.5 bg-current top-1/2 -translate-y-1/2 transition-all duration-200 ${isOpen ? "opacity-0" : "opacity-100"
+                    }`}
+                ></span>
+                <span
+                  className={`absolute w-full h-0.5 bg-current transition-all duration-200 ${isOpen ? "-rotate-45 top-1/2 -translate-y-1/2" : "bottom-0"
+                    }`}
+                ></span>
+              </div>
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="lg:hidden pb-4 space-y-1 animate-fade-in-up">
+        <div
+          className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+            }`}
+        >
+          <div className="pb-4 space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -89,12 +112,12 @@ export function Navbar() {
 
             <a
               href="tel:9597744300"
-              className="block px-3 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md text-center"
+              className="block px-3 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md text-center mt-2"
             >
               Call Us
             </a>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   )
