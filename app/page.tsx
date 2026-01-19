@@ -20,16 +20,16 @@ export default function Home() {
     <main className="overflow-hidden">
       {/* Hero Section with Background Image */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
           <img
             src="/hero-bg.jpg"
             alt="Rehabilitation Center"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-background/80 bg-white/70 backdrop-blur-[2px]"></div>
-          {/* Subtle gradient overlay for extra depth without distracting */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-transparent to-background"></div>
+          {/* Lighter overlay to show image content while keeping text readable */}
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]"></div>
+          {/* Subtle gradient for depth, much lighter to reveal image */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-white/80"></div>
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
