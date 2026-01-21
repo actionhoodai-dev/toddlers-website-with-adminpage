@@ -1,60 +1,54 @@
 "use client"
 
-const services = [
-  {
-    title: "Occupational therapy",
-    description:
-      "Occupational therapy helps individuals of all ages develop, maintain, or regain the skills needed for daily living and work.",
-    image: "/service-occupational-therapy.jpg",
-    details: [
-      "Helps develop motor skills and hand-eye coordination",
-      "Assists in improving self-care abilities",
-      "Supports work-related skill development",
-      "Addresses sensory processing issues",
-      "Promotes independence and quality of life",
-    ],
-  },
-  {
-    title: "Physical therapy",
-    description:
-      "Physical therapy focuses on restoring mobility, strength, and function through evidence-based rehabilitation techniques.",
-    image: "/service-physical-therapy.jpg",
-    details: [
-      "Improves muscle strength and flexibility",
-      "Restores mobility and range of motion",
-      "Reduces pain and inflammation",
-      "Prevents further injury or disability",
-      "Supports recovery after injury or surgery",
-    ],
-  },
-  {
-    title: "Special education",
-    description:
-      "Special education provides customized learning programs for children with developmental and cognitive challenges.",
-    image: "/service-special-education.jpg",
-    details: [
-      "Personalized learning plans",
-      "Small group and individual sessions",
-      "Focus on academic and life skills",
-      "Collaboration with families and therapists",
-      "Continuous progress monitoring",
-    ],
-  },
-  {
-    title: "Speech therapy",
-    description: "Speech therapy addresses communication and swallowing disorders with specialized interventions.",
-    image: "/service-speech-therapy.jpg",
-    details: [
-      "Speech and language development",
-      "Articulation and pronunciation improvement",
-      "Voice and fluency enhancement",
-      "Swallowing and feeding support",
-      "Communication strategies and aids",
-    ],
-  },
-]
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase/client"
+import Link from "next/link"
+
+interface Service {
+  id: string
+  title: string
+  slug: string
+  short_description: string
+  full_description: string | null
+}
 
 export default function Services() {
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
+  const fetchServices = async () => {
+    const { data, error } = await supabase
+      .from("services")
+      .select("id, title, slug, short_description, full_description")
+      .order("display_order", { ascending: true })
+
+    if (error) {
+      console.error("Error fetching services:", error)
+    } else {
+      setServices(data || [])
+    }
+    setLoading(false)
+  }
+
+  const hasDetailPage = (fullDescription: string | null) => {
+    return fullDescription !== null && fullDescription.trim().length > 0
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen pt-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading services...</p>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen pt-16">
       {/* Hero */}
@@ -70,41 +64,46 @@ export default function Services() {
       {/* Services Grid */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {services.map((service, index) => (
-              <div
-                key={index}
-                className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group animate-fade-in-up flex flex-col"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                {/* Service Image */}
-                <div className="h-56 w-full overflow-hidden border-b border-border">
-                  <img
-                    src={service.image}
-                    alt={service.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
+          {services.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No services available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {services.map((service, index) => {
+                const clickable = hasDetailPage(service.full_description)
 
-                <div className="p-6 flex-1 flex flex-col">
-                  <h3 className="text-2xl font-bold text-foreground mb-3">{service.title}</h3>
-                  <p className="text-muted-foreground mb-6 text-lg leading-relaxed">{service.description}</p>
+                return (
+                  <div
+                    key={service.id}
+                    className={`bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group animate-fade-in-up flex flex-col ${clickable ? "cursor-pointer" : ""
+                      }`}
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="text-2xl font-bold text-foreground mb-3">{service.title}</h3>
+                      <p className="text-muted-foreground mb-6 text-lg leading-relaxed flex-1">
+                        {service.short_description}
+                      </p>
 
-                  <div className="mt-auto bg-muted/30 rounded-lg p-5 border border-border/50">
-                    <h4 className="font-semibold text-foreground mb-3 text-sm uppercase tracking-wider opacity-80">Key Benefits</h4>
-                    <ul className="space-y-3">
-                      {service.details.map((detail, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                          <span className="text-muted-foreground text-sm">{detail}</span>
-                        </li>
-                      ))}
-                    </ul>
+                      {clickable ? (
+                        <Link
+                          href={`/services/${service.slug}`}
+                          className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all mt-auto"
+                        >
+                          Learn More →
+                        </Link>
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic mt-auto">
+                          Detailed information coming soon
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,9 +1,22 @@
-"use client"
-
 import Link from "next/link"
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from "lucide-react"
+import { getSiteSettingsServer, DEFAULT_CONTACT_INFO } from "@/lib/settings-server"
 
-export function Footer() {
+export async function Footer() {
+  const settings = await getSiteSettingsServer()
+
+  // Use database values or fallback to defaults
+  const contactInfo = {
+    address: settings?.address || DEFAULT_CONTACT_INFO.address,
+    phone_primary: settings?.phone_primary || DEFAULT_CONTACT_INFO.phone_primary,
+    phone_secondary: settings?.phone_secondary || DEFAULT_CONTACT_INFO.phone_secondary,
+    phone_tertiary: settings?.phone_tertiary || DEFAULT_CONTACT_INFO.phone_tertiary,
+    email: settings?.email || DEFAULT_CONTACT_INFO.email,
+  }
+
+  // Helper to format address for display
+  const addressLines = contactInfo.address.split(',').map(line => line.trim())
+
   return (
     <footer className="bg-foreground text-background border-t border-border mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -55,15 +68,15 @@ export function Footer() {
               <li className="flex items-start space-x-2">
                 <Phone size={16} className="mt-0.5 flex-shrink-0" />
                 <div>
-                  <div>9597744300</div>
-                  <div>9865935809</div>
-                  <div>9677638738</div>
+                  {contactInfo.phone_primary && <div>{contactInfo.phone_primary}</div>}
+                  {contactInfo.phone_secondary && <div>{contactInfo.phone_secondary}</div>}
+                  {contactInfo.phone_tertiary && <div>{contactInfo.phone_tertiary}</div>}
                 </div>
               </li>
               <li className="flex items-start space-x-2">
                 <Mail size={16} className="mt-0.5 flex-shrink-0" />
-                <a href="mailto:toddlersmstc@gmail.com" className="hover:opacity-100">
-                  toddlersmstc@gmail.com
+                <a href={`mailto:${contactInfo.email}`} className="hover:opacity-100">
+                  {contactInfo.email}
                 </a>
               </li>
             </ul>
@@ -75,9 +88,9 @@ export function Footer() {
             <div className="flex items-start space-x-2 text-sm opacity-75">
               <MapPin size={16} className="mt-0.5 flex-shrink-0" />
               <div>
-                <p>No.74, North Park street</p>
-                <p>Gobichettipalayam</p>
-                <p>Erode District, Pin: 638452</p>
+                {addressLines.map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
               </div>
             </div>
           </div>

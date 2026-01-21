@@ -4,8 +4,11 @@ import type React from "react"
 
 import { useState } from "react"
 import { Mail, Phone, MapPin, Clock, MessageSquare } from "lucide-react"
+import { useContactSettings } from "@/lib/use-contact-settings"
+import { supabase } from "@/lib/supabase/client"
 
 export default function Contact() {
+  const { settings: contactInfo } = useContactSettings()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,12 +24,7 @@ export default function Contact() {
     setLoading(true)
 
     try {
-      // Import supabase client
-      const { createClient } = await import("@supabase/supabase-js")
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
+      // Insert into contact_messages table
 
       // Insert into contact_messages table
       const { error } = await supabase.from("contact_messages").insert({
@@ -79,21 +77,27 @@ export default function Contact() {
             </div>
             <h3 className="font-semibold text-foreground mb-2">Phone</h3>
             <p className="text-sm text-muted-foreground space-y-1">
-              <div>
-                <a href="tel:9597744300" className="hover:text-primary transition-colors">
-                  9597744300
-                </a>
-              </div>
-              <div>
-                <a href="tel:9865935809" className="hover:text-primary transition-colors">
-                  9865935809
-                </a>
-              </div>
-              <div>
-                <a href="tel:9677638738" className="hover:text-primary transition-colors">
-                  9677638738
-                </a>
-              </div>
+              {contactInfo.phone_primary && (
+                <div>
+                  <a href={`tel:${contactInfo.phone_primary}`} className="hover:text-primary transition-colors">
+                    {contactInfo.phone_primary}
+                  </a>
+                </div>
+              )}
+              {contactInfo.phone_secondary && (
+                <div>
+                  <a href={`tel:${contactInfo.phone_secondary}`} className="hover:text-primary transition-colors">
+                    {contactInfo.phone_secondary}
+                  </a>
+                </div>
+              )}
+              {contactInfo.phone_tertiary && (
+                <div>
+                  <a href={`tel:${contactInfo.phone_tertiary}`} className="hover:text-primary transition-colors">
+                    {contactInfo.phone_tertiary}
+                  </a>
+                </div>
+              )}
             </p>
           </div>
 
@@ -107,8 +111,8 @@ export default function Contact() {
             </div>
             <h3 className="font-semibold text-foreground mb-2">Email</h3>
             <p className="text-sm text-muted-foreground">
-              <a href="mailto:toddlersmstc@gmail.com" className="hover:text-accent transition-colors">
-                toddlersmstc@gmail.com
+              <a href={`mailto:${contactInfo.email}`} className="hover:text-accent transition-colors">
+                {contactInfo.email}
               </a>
             </p>
           </div>
@@ -123,11 +127,12 @@ export default function Contact() {
             </div>
             <h3 className="font-semibold text-foreground mb-2">Address</h3>
             <p className="text-sm text-muted-foreground">
-              No.74, North Park street
-              <br />
-              Gobichettipalayam
-              <br />
-              Erode District, Pin: 638452
+              {contactInfo.address.split(',').map((line, i) => (
+                <span key={i}>
+                  {line.trim()}
+                  {i < contactInfo.address.split(',').length - 1 && <br />}
+                </span>
+              ))}
             </p>
           </div>
 
@@ -269,7 +274,7 @@ export default function Contact() {
               <h3 className="text-2xl font-bold mb-4 text-foreground">Quick Call</h3>
               <p className="text-muted-foreground mb-6">Need immediate assistance? Call us directly.</p>
               <a
-                href="tel:9597744300"
+                href={`tel:${contactInfo.phone_primary}`}
                 className="inline-flex px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all"
               >
                 Call Now
@@ -280,7 +285,7 @@ export default function Contact() {
               <h3 className="text-2xl font-bold mb-4 text-foreground">WhatsApp</h3>
               <p className="text-muted-foreground mb-6">Connect with us on WhatsApp for quick responses.</p>
               <a
-                href="https://wa.me/919597744300"
+                href={`https://wa.me/${contactInfo.whatsapp_number}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex px-8 py-3 bg-accent text-accent-foreground font-semibold rounded-lg hover:bg-accent/90 transition-all"

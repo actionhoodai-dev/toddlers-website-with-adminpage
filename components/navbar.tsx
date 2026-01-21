@@ -3,11 +3,14 @@
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
+import { useContactSettings } from "@/lib/use-contact-settings"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
+  const { settings } = useContactSettings()
+  const phone = settings.phone_primary || "9597744300"
 
   useEffect(() => {
     setIsOpen(false)
@@ -39,7 +42,6 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          {/* Logo */}
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-gray-200 shadow-sm group-hover:shadow-md transition-shadow">
               <img
@@ -70,7 +72,7 @@ export function Navbar() {
           <div className="flex items-center space-x-4">
 
             <a
-              href="tel:9597744300"
+              href={`tel:${phone}`}
               className="hidden sm:inline-flex px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
             >
               Call Us
@@ -118,7 +120,7 @@ export function Navbar() {
             ))}
 
             <a
-              href="tel:9597744300"
+              href={`tel:${phone}`}
               className="block px-3 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md text-center mt-2"
             >
               Call Us

@@ -1,11 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getSiteSettings, DEFAULT_CONTACT_INFO } from "@/lib/settings"
 
 export function WhatsAppButton() {
     const [isVisible, setIsVisible] = useState(false)
+    const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_CONTACT_INFO.whatsapp_number)
 
     useEffect(() => {
+        // Fetch WhatsApp number from settings
+        getSiteSettings().then(settings => {
+            if (settings?.whatsapp_number) {
+                setWhatsappNumber(settings.whatsapp_number)
+            }
+        })
+
         const toggleVisibility = () => {
             if (window.scrollY > 300) {
                 setIsVisible(true)
@@ -19,9 +28,8 @@ export function WhatsAppButton() {
     }, [])
 
     const handleClick = () => {
-        const phoneNumber = "919597744300" // WhatsApp format: country code + number
         const message = encodeURIComponent("Hello! I'd like to know more about your services.")
-        const url = `https://wa.me/${phoneNumber}?text=${message}`
+        const url = `https://wa.me/${whatsappNumber}?text=${message}`
         window.open(url, "_blank")
     }
 
