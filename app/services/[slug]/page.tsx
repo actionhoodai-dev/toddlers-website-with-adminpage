@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/firebase/client"
+import { collection, query, where, getDocs, limit } from "firebase/firestore"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -11,17 +12,29 @@ interface ServiceDetailProps {
 
 export default async function ServiceDetail({ params }: ServiceDetailProps) {
     const { slug } = await params
-    const supabase = await createClient()
 
-    const { data: service, error } = await supabase
-        .from("services")
-        .select("*")
-        .eq("slug", slug)
-        .single()
+    let service: any = null
+    try {
+        const q = query(
+            collection(db, "services"),
+            where("slug", "==", slug),
+            limit(1)
+        )
+        const querySnapshot = await getDocs(q)
 
-    // 1. If not found (DB error or no rows)
+        if (!querySnapshot.empty) {
+            service = {
+                id: querySnapshot.docs[0].id,
+                ...querySnapshot.docs[0].data()
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching service detail:", error)
+    }
+
+    // 1. If not found
     // 2. If full_description is missing or empty (STRICT RULE)
-    if (error || !service || !service.full_description || !service.full_description.trim()) {
+    if (!service || !service.full_description || !service.full_description.trim()) {
         return notFound()
     }
 

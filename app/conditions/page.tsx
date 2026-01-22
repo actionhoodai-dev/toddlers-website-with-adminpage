@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, query, orderBy, getDocs } from "firebase/firestore"
 import Link from "next/link"
 
 interface Condition {
@@ -25,17 +26,20 @@ export default function Conditions() {
   }, [])
 
   const fetchConditions = async () => {
-    const { data, error } = await supabase
-      .from("clinical_conditions")
-      .select("id, name, slug, category, description")
-      .order("display_order", { ascending: true })
+    try {
+      const q = query(collection(db, "conditions"), orderBy("display_order", "asc"))
+      const querySnapshot = await getDocs(q)
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Condition[]
 
-    if (error) {
-      console.error("Error fetching conditions:", error)
-    } else {
       setConditions(data || [])
+    } catch (error) {
+      console.error("Error fetching conditions:", error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const hasDetailPage = (description: string | null) => {

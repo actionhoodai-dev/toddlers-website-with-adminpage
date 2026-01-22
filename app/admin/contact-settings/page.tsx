@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { doc, getDoc, updateDoc } from "firebase/firestore"
 import { Save, MapPin, Phone, Mail, MessageCircle } from "lucide-react"
 
 interface ContactSettings {
@@ -31,53 +32,53 @@ export default function ContactSettingsPage() {
     }, [])
 
     const fetchSettings = async () => {
-        const { data, error } = await supabase
-            .from("site_settings")
-            .select("address, phone_primary, phone_secondary, phone_tertiary, email, whatsapp_number")
-            .eq("id", 1)
-            .single()
+        try {
+            const docRef = doc(db, "site_settings", "default")
+            const docSnap = await getDoc(docRef)
 
-        if (error) {
+            if (docSnap.exists()) {
+                const data = docSnap.data()
+                setSettings({
+                    address: data.address || "",
+                    phone_primary: data.phone_primary || "",
+                    phone_secondary: data.phone_secondary || "",
+                    phone_tertiary: data.phone_tertiary || "",
+                    email: data.email || "",
+                    whatsapp_number: data.whatsapp_number || "",
+                })
+            }
+        } catch (error) {
             console.error("Error fetching settings:", error)
             setMessage({ type: "error", text: "Failed to load settings" })
-        } else if (data) {
-            setSettings({
-                address: data.address || "",
-                phone_primary: data.phone_primary || "",
-                phone_secondary: data.phone_secondary || "",
-                phone_tertiary: data.phone_tertiary || "",
-                email: data.email || "",
-                whatsapp_number: data.whatsapp_number || "",
-            })
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     const handleSave = async () => {
         setSaving(true)
         setMessage(null)
 
-        const { error } = await supabase
-            .from("site_settings")
-            .update({
+        try {
+            const docRef = doc(db, "site_settings", "default")
+            await updateDoc(docRef, {
                 address: settings.address,
                 phone_primary: settings.phone_primary,
                 phone_secondary: settings.phone_secondary,
                 phone_tertiary: settings.phone_tertiary,
                 email: settings.email,
                 whatsapp_number: settings.whatsapp_number,
+                updated_at: new Date().toISOString()
             })
-            .eq("id", 1)
 
-        if (error) {
-            console.error("Error saving settings:", error)
-            setMessage({ type: "error", text: "Failed to save settings. Please try again." })
-        } else {
             setMessage({ type: "success", text: "Contact settings saved successfully!" })
             setTimeout(() => setMessage(null), 3000)
+        } catch (error) {
+            console.error("Error saving settings:", error)
+            setMessage({ type: "error", text: "Failed to save settings. Please try again." })
+        } finally {
+            setSaving(false)
         }
-
-        setSaving(false)
     }
 
     if (loading) {
@@ -103,8 +104,8 @@ export default function ContactSettingsPage() {
             {message && (
                 <div
                     className={`mb-6 p-4 rounded-lg border ${message.type === "success"
-                            ? "bg-green-50 border-green-200 text-green-800"
-                            : "bg-red-50 border-red-200 text-red-800"
+                        ? "bg-green-50 border-green-200 text-green-800"
+                        : "bg-red-50 border-red-200 text-red-800"
                         }`}
                 >
                     {message.text}

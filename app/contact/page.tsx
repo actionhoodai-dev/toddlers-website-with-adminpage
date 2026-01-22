@@ -5,7 +5,8 @@ import type React from "react"
 import { useState } from "react"
 import { Mail, Phone, MapPin, Clock, MessageSquare } from "lucide-react"
 import { useContactSettings } from "@/lib/use-contact-settings"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
 
 export default function Contact() {
   const { settings: contactInfo } = useContactSettings()
@@ -24,24 +25,18 @@ export default function Contact() {
     setLoading(true)
 
     try {
-      // Insert into contact_messages table
-
-      // Insert into contact_messages table
-      const { error } = await supabase.from("contact_messages").insert({
+      // Insert into contact_messages collection
+      await addDoc(collection(db, "contact_messages"), {
         name: formData.name,
         email: formData.email,
         phone: formData.phone || null,
         message: `${formData.subject ? `[${formData.subject}] ` : ""}${formData.message}`,
+        created_at: serverTimestamp()
       })
 
-      if (error) {
-        console.error("Error submitting contact form:", error)
-        alert("Error submitting form. Please try again.")
-      } else {
-        setSubmitted(true)
-        setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
-        setTimeout(() => setSubmitted(false), 5000)
-      }
+      setSubmitted(true)
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
+      setTimeout(() => setSubmitted(false), 5000)
     } catch (error) {
       console.error("Contact form error:", error)
       alert("Error submitting form. Please try again.")

@@ -1,7 +1,8 @@
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { doc, getDoc } from "firebase/firestore"
 
 export interface SiteSettings {
-    id: number
+    id?: number
     gallery_enabled: boolean
     max_gallery_images: number
     address: string | null
@@ -10,27 +11,27 @@ export interface SiteSettings {
     phone_tertiary: string | null
     email: string | null
     whatsapp_number: string | null
-    created_at: string
-    updated_at: string
+    created_at?: any
+    updated_at?: any
 }
 
 /**
- * Fetches site settings from Supabase.
+ * Fetches site settings from Firestore (single document 'default' in collection 'site_settings').
  * Used for displaying contact information across the site.
  */
 export async function getSiteSettings(): Promise<SiteSettings | null> {
-    const { data, error } = await supabase
-        .from("site_settings")
-        .select("*")
-        .eq("id", 1)
-        .single()
+    try {
+        const docRef = doc(db, "site_settings", "default")
+        const docSnap = await getDoc(docRef)
 
-    if (error) {
+        if (docSnap.exists()) {
+            return docSnap.data() as SiteSettings
+        }
+        return null
+    } catch (error) {
         console.error("Error fetching site settings:", error)
         return null
     }
-
-    return data
 }
 
 /**

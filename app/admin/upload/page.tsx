@@ -2,9 +2,28 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase/client"
 import Link from "next/link"
 import imageCompression from "browser-image-compression"
+import { db } from "@/lib/firebase/client"
+import { doc, getDoc, collection, getCountFromServer } from "firebase/firestore"
+
+/**
+ * Admin Upload Page - INTENTIONALLY DISABLED
+ * 
+ * This page allows admins to view the upload interface but prevents actual uploads:
+ * - Form fields are disabled
+ * - Upload button shows "Upload Disabled (Storage Pending)"
+ * - Clear warning message displayed to users
+ * - Image compression functionality remains (for future use)
+ * 
+ * DISABLED BECAUSE:
+ * - No storage backend configured (Firebase Storage not used per requirements)
+ * - Supabase Storage removed during production cleanup
+ * - Gallery feature is gracefully disabled for production safety
+ * 
+ * DO NOT enable this without configuring a storage backend first.
+ * See app/actions/upload-image.ts for the server action (also disabled).
+ */
 
 export default function UploadPage() {
     const router = useRouter()
@@ -23,15 +42,24 @@ export default function UploadPage() {
 
     useEffect(() => {
         async function fetchStatus() {
-            // Fetch settings
-            const { data: settingsData } = await supabase.from("site_settings").select("*").single()
-            setSettings(settingsData)
+            try {
+                // Fetch settings from Firestore
+                const docRef = doc(db, "site_settings", "default")
+                const docSnap = await getDoc(docRef)
 
-            // Fetch current image count
-            const { count } = await supabase.from("gallery").select("*", { count: "exact", head: true })
-            setCurrentCount(count || 0)
+                if (docSnap.exists()) {
+                    setSettings(docSnap.data())
+                }
 
-            setLoading(false)
+                // Fetch current image count from Firestore
+                const galleryColl = collection(db, "gallery")
+                const countSnap = await getCountFromServer(galleryColl)
+                setCurrentCount(countSnap.data().count)
+            } catch (error) {
+                console.error("Error fetching upload status:", error)
+            } finally {
+                setLoading(false)
+            }
         }
         fetchStatus()
     }, [])
@@ -103,54 +131,10 @@ export default function UploadPage() {
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault()
-        setUploading(true)
-        setMessage(null)
-
-        if (!file || !title) {
-            setMessage({ type: 'error', text: "Please select a file and enter a title." })
-            setUploading(false)
-            return
-        }
-
-        try {
-            const formData = new FormData()
-            formData.append("file", file)
-            formData.append("title", title)
-            formData.append("category", category)
-            formData.append("description", description)
-
-            console.log("Submitting via API Route...")
-
-            const response = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-            })
-
-            const result = await response.json()
-
-            if (!response.ok) {
-                console.error("API Error Response:", result)
-                throw new Error(result.error || "Upload failed")
-            }
-
-            console.log("Upload Success:", result)
-            setMessage({ type: 'success', text: "Image uploaded successfully!" })
-            setTitle("")
-            setDescription("")
-            setFile(null)
-            setPreview(null)
-
-            setTimeout(() => router.push("/admin/gallery"), 1500)
-
-        } catch (error: any) {
-            console.error("Client Upload Catch:", error)
-            setMessage({ type: 'error', text: "Error: " + error.message })
-        } finally {
-            setUploading(false)
-        }
+        setMessage({ type: 'warning', text: "Image uploads are temporarily disabled. Storage setup pending." })
     }
 
-    const isUploadDisabled = !settings?.gallery_enabled || (currentCount >= settings?.max_gallery_images)
+    const isUploadDisabled = true // Force disabled for storage cleanup
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
@@ -173,18 +157,13 @@ export default function UploadPage() {
                     </div>
                 )}
 
-                {/* Warning Messages */}
-                {!loading && !settings?.gallery_enabled && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                        <strong>Warning:</strong> Gallery uploads are currently disabled in settings.
-                    </div>
-                )}
-
-                {!loading && settings?.gallery_enabled && currentCount >= settings?.max_gallery_images && (
-                    <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-orange-700">
-                        <strong>Warning:</strong> Maximum {settings.max_gallery_images} images reached. Please delete some images before uploading.
-                    </div>
-                )}
+                {/* Storage Pending Message */}
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800">
+                    <p className="font-bold flex items-center gap-2">
+                        <span>⚠️</span> Storage Setup Pending
+                    </p>
+                    <p className="text-sm mt-1">Image uploads are temporarily disabled. Storage setup pending.</p>
+                </div>
 
                 <form onSubmit={handleUpload} className="space-y-6">
                     <div>
@@ -270,10 +249,10 @@ export default function UploadPage() {
 
                     <button
                         type="submit"
-                        disabled={uploading || isUploadDisabled || compressing}
-                        className="w-full bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={true}
+                        className="w-full bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg cursor-not-allowed"
                     >
-                        {compressing ? "Processing Image..." : uploading ? "Uploading..." : isUploadDisabled ? "Upload Disabled" : "Upload Image"}
+                        Upload Disabled (Storage Pending)
                     </button>
                 </form>
             </div>

@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, where, limit, serverTimestamp } from "firebase/firestore"
 import { Plus, Edit, Trash2, Save, X, ExternalLink } from "lucide-react"
 
 interface ClinicalCondition {
@@ -31,18 +32,19 @@ export default function ConditionsManagerPage() {
     }, [])
 
     const fetchConditions = async () => {
-        const { data, error } = await supabase
-            .from("clinical_conditions")
-            .select("*")
-            .order("display_order", { ascending: true })
-
-        if (error) {
-            console.error("Error fetching conditions:", error)
-            alert("Failed to load conditions")
-        } else {
+        try {
+            const q = query(collection(db, "conditions"), orderBy("display_order", "asc"))
+            const querySnapshot = await getDocs(q)
+            const data = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as ClinicalCondition[]
             setConditions(data || [])
+        } catch (error) {
+            console.error("Error fetching conditions:", error)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     const handleAdd = () => {
@@ -81,48 +83,56 @@ export default function ConditionsManagerPage() {
         setFormData({ ...formData, name: value, slug: generateSlug(value) })
     }
 
+    const checkSlugUniqueness = async (slug: string, excludeId?: string) => {
+        const q = query(collection(db, "conditions"), where("slug", "==", slug), limit(1))
+        const querySnapshot = await getDocs(q)
+        if (querySnapshot.empty) return true
+
+        // If it exists, check if it's the same document we are editing
+        return querySnapshot.docs[0].id === excludeId
+    }
+
     const handleSave = async () => {
         if (!formData.name.trim() || !formData.slug.trim()) {
             alert("Please fill in all required fields (Name, Slug)")
             return
         }
 
-        if (isAddingNew) {
-            // Insert new condition
-            const { error } = await supabase.from("clinical_conditions").insert({
-                name: formData.name,
-                slug: formData.slug,
-                category: formData.category,
-                description: formData.description.trim() || null,
-                display_order: conditions.length + 1,
-            })
+        const isSlugUnique = await checkSlugUniqueness(formData.slug, editingCondition?.id)
+        if (!isSlugUnique) {
+            alert("A condition with this slug already exists. Please choose a different name or slug.")
+            return
+        }
 
-            if (error) {
-                console.error("Error adding condition:", error)
-                alert("Failed to add condition. Slug might already exist.")
-                return
-            }
-        } else if (editingCondition) {
-            // Update existing condition
-            const { error } = await supabase
-                .from("clinical_conditions")
-                .update({
+        try {
+            if (isAddingNew) {
+                // Insert new condition
+                await addDoc(collection(db, "conditions"), {
                     name: formData.name,
                     slug: formData.slug,
                     category: formData.category,
                     description: formData.description.trim() || null,
+                    display_order: conditions.length + 1,
+                    created_at: serverTimestamp()
                 })
-                .eq("id", editingCondition.id)
-
-            if (error) {
-                console.error("Error updating condition:", error)
-                alert("Failed to update condition. Slug might already exist.")
-                return
+            } else if (editingCondition) {
+                // Update existing condition
+                const conditionRef = doc(db, "conditions", editingCondition.id)
+                await updateDoc(conditionRef, {
+                    name: formData.name,
+                    slug: formData.slug,
+                    category: formData.category,
+                    description: formData.description.trim() || null,
+                    updated_at: serverTimestamp()
+                })
             }
-        }
 
-        handleCancel()
-        fetchConditions()
+            handleCancel()
+            fetchConditions()
+        } catch (error) {
+            console.error("Error saving condition:", error)
+            alert("Failed to save condition. Please try again.")
+        }
     }
 
     const handleDelete = async (condition: ClinicalCondition) => {
@@ -134,15 +144,13 @@ export default function ConditionsManagerPage() {
             return
         }
 
-        const { error } = await supabase.from("clinical_conditions").delete().eq("id", condition.id)
-
-        if (error) {
+        try {
+            await deleteDoc(doc(db, "conditions", condition.id))
+            fetchConditions()
+        } catch (error) {
             console.error("Error deleting condition:", error)
             alert("Failed to delete condition")
-            return
         }
-
-        fetchConditions()
     }
 
     const hasDetailPage = (description: string | null) => {
@@ -273,8 +281,8 @@ export default function ConditionsManagerPage() {
                 <button
                     onClick={() => setFilterCategory(null)}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterCategory === null
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground hover:bg-muted/80"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground hover:bg-muted/80"
                         }`}
                 >
                     All ({conditions.length})
@@ -282,8 +290,8 @@ export default function ConditionsManagerPage() {
                 <button
                     onClick={() => setFilterCategory("Pediatric")}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterCategory === "Pediatric"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground hover:bg-muted/80"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground hover:bg-muted/80"
                         }`}
                 >
                     Pediatric ({pediatricCount})
@@ -291,8 +299,8 @@ export default function ConditionsManagerPage() {
                 <button
                     onClick={() => setFilterCategory("Adult")}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterCategory === "Adult"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground hover:bg-muted/80"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground hover:bg-muted/80"
                         }`}
                 >
                     Adult ({adultCount})

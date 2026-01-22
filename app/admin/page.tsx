@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
+import { db } from "@/lib/firebase/client"
+import { collection, getCountFromServer } from "firebase/firestore"
+import { getCurrentUser, signOut } from "@/lib/auth/helpers"
+import type { User } from "firebase/auth"
 import Link from "next/link"
 
 export default function AdminDashboard() {
@@ -19,27 +21,31 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const user = await getCurrentUser()
             if (!user) {
                 router.push("/admin/login")
                 return
             }
             setUser(user)
 
-            // Fetch Stats
-            const [galleryRes, messagesRes, servicesRes, conditionsRes] = await Promise.all([
-                supabase.from("gallery").select("*", { count: "exact", head: true }),
-                supabase.from("contact_messages").select("*", { count: "exact", head: true }),
-                supabase.from("services").select("*", { count: "exact", head: true }),
-                supabase.from("clinical_conditions").select("*", { count: "exact", head: true })
-            ])
+            try {
+                // Fetch Stats from Firestore
+                const [gallerySnap, messagesSnap, servicesSnap, conditionsSnap] = await Promise.all([
+                    getCountFromServer(collection(db, "gallery")),
+                    getCountFromServer(collection(db, "contact_messages")),
+                    getCountFromServer(collection(db, "services")),
+                    getCountFromServer(collection(db, "conditions"))
+                ])
 
-            setStats({
-                gallery: galleryRes.count || 0,
-                messages: messagesRes.count || 0,
-                services: servicesRes.count || 0,
-                conditions: conditionsRes.count || 0
-            })
+                setStats({
+                    gallery: gallerySnap.data().count,
+                    messages: messagesSnap.data().count,
+                    services: servicesSnap.data().count,
+                    conditions: conditionsSnap.data().count
+                })
+            } catch (error) {
+                console.error("Error fetching dashboard stats:", error)
+            }
 
             setLoading(false)
         }
@@ -48,9 +54,10 @@ export default function AdminDashboard() {
     }, [router])
 
     const handleLogout = async () => {
-        await supabase.auth.signOut()
+        await signOut()
         router.push("/admin/login")
     }
+
 
     if (loading) {
         return (
@@ -106,7 +113,7 @@ export default function AdminDashboard() {
                     <h2 className="text-xl font-bold mb-4">Account Information</h2>
                     <div className="space-y-2 text-muted-foreground">
                         <p><span className="font-semibold text-foreground">Email:</span> {user?.email}</p>
-                        <p><span className="font-semibold text-foreground">User ID:</span> {user?.id}</p>
+                        <p><span className="font-semibold text-foreground">User ID:</span> {user?.uid}</p>
                         <p><span className="font-semibold text-foreground">Status:</span> <span className="text-green-600 font-medium">Active</span></p>
                     </div>
                 </div>

@@ -1,9 +1,28 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp } from "firebase/firestore"
 import Link from "next/link"
 import { Folder } from "lucide-react"
+
+/**
+ * Admin Gallery Manager - UPLOADS DISABLED, VIEWING ENABLED
+ * 
+ * This page allows viewing and managing existing gallery metadata stored in Firestore:
+ * - View images grouped by category
+ * - Edit image metadata (title, description, category)
+ * - Delete images from database
+ * - Bulk operations (select multiple, delete selected)
+ * 
+ * UPLOADS ARE DISABLED:
+ * - No storage backend configured (Firebase Storage not used per requirements)
+ * - Supabase Storage removed during production cleanup
+ * - Upload button is grayed out with explanatory text
+ * 
+ * DO NOT enable uploads without configuring a storage backend first.
+ */
+
 
 interface GalleryImage {
     id: string
@@ -12,7 +31,7 @@ interface GalleryImage {
     image_url: string
     category: string
     display_order: number
-    created_at: string
+    created_at: any
 }
 
 export default function AdminGalleryPage() {
@@ -30,14 +49,24 @@ export default function AdminGalleryPage() {
     }, [])
 
     const fetchImages = async () => {
-        const { data, error } = await supabase
-            .from("gallery")
-            .select("*")
-            .order("category", { ascending: true })
-            .order("created_at", { ascending: false })
-
-        if (data) setImages(data)
-        setLoading(false)
+        try {
+            // Simplified query - orders by created_at only (no composite index needed)
+            // Category grouping is handled client-side in the UI
+            const q = query(
+                collection(db, "gallery"),
+                orderBy("created_at", "desc")
+            )
+            const querySnapshot = await getDocs(q)
+            const data = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as GalleryImage[]
+            setImages(data)
+        } catch (error) {
+            console.error("Error fetching gallery:", error)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const toggleSelection = (id: string) => {
@@ -68,24 +97,16 @@ export default function AdminGalleryPage() {
 
         try {
             const imagesToDelete = images.filter(img => selectedImages.has(img.id))
+            const batch = writeBatch(db)
 
-            // Delete from storage and database
-            const deletePromises = imagesToDelete.map(async (img) => {
-                // Extract filename from URL
-                const fileName = img.image_url.split('/').pop()
-
-                if (fileName) {
-                    // Delete from storage
-                    await supabase.storage.from("gallery-images").remove([fileName])
-                }
-
-                // Delete from database
-                await supabase.from("gallery").delete().eq("id", img.id)
+            // 1. Delete from Firestore
+            imagesToDelete.forEach(img => {
+                const docRef = doc(db, "gallery", img.id)
+                batch.delete(docRef)
             })
+            await batch.commit()
 
-            await Promise.all(deletePromises)
-
-            alert(`Successfully deleted ${selectedImages.size} image(s)`)
+            alert(`Successfully deleted ${selectedImages.size} image(s) from database.`)
             setSelectedImages(new Set())
             setSelectMode(false) // Exit select mode after delete
             fetchImages()
@@ -104,15 +125,10 @@ export default function AdminGalleryPage() {
         setDeleting(true)
 
         try {
-            const fileName = img.image_url.split('/').pop()
+            // 1. Delete Firestore metadata
+            await deleteDoc(doc(db, "gallery", img.id))
 
-            if (fileName) {
-                await supabase.storage.from("gallery-images").remove([fileName])
-            }
-
-            await supabase.from("gallery").delete().eq("id", img.id)
-
-            alert("Image deleted successfully")
+            alert("Image deleted from database successfully")
             setPreviewImage(null) // Close modal after delete
             fetchImages()
         } catch (error) {
@@ -139,17 +155,13 @@ export default function AdminGalleryPage() {
 
         setSaving(true)
         try {
-            const { error } = await supabase
-                .from("gallery")
-                .update({
-                    title: editData.title,
-                    description: editData.description,
-                    category: editData.category,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", previewImage.id)
-
-            if (error) throw error
+            const docRef = doc(db, "gallery", previewImage.id)
+            await updateDoc(docRef, {
+                title: editData.title,
+                description: editData.description,
+                category: editData.category,
+                updated_at: serverTimestamp()
+            })
 
             alert("Image updated successfully!")
             setPreviewImage(null)
@@ -178,7 +190,12 @@ export default function AdminGalleryPage() {
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Gallery Manager</h1>
-                        <p className="text-sm text-gray-600 mt-1">Total: {images.length} images</p>
+                        <p className="text-sm text-gray-600 mt-1">Total: {images.length} images (Metadata only)</p>
+                    </div>
+
+                    {/* Storage Pending Message */}
+                    <div className="flex-1 max-w-md mx-8 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+                        <strong>⚠️ Storage Pending:</strong> Gallery storage is currently being migrated. Updates are disabled.
                     </div>
                     <div className="space-x-4 flex items-center">
                         {selectMode ? (
@@ -216,9 +233,12 @@ export default function AdminGalleryPage() {
                                 >
                                     Select Multiple
                                 </button>
-                                <Link href="/admin/upload" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-                                    Upload New
-                                </Link>
+                                <button
+                                    disabled
+                                    className="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
+                                >
+                                    Upload Disabled
+                                </button>
                             </>
                         )}
                         <Link href="/admin" className="px-4 py-2 text-gray-600 hover:text-gray-900">

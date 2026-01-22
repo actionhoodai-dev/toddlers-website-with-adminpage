@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore"
 import Link from "next/link"
 
 interface ContactMessage {
@@ -10,7 +11,7 @@ interface ContactMessage {
     email: string
     phone: string | null
     message: string
-    created_at: string
+    created_at: any
 }
 
 export default function MessagesPage() {
@@ -24,14 +25,23 @@ export default function MessagesPage() {
     }, [])
 
     const fetchMessages = async () => {
-        const { data, error } = await supabase
-            .from("contact_messages")
-            .select("*")
-            .order("created_at", { ascending: false })
-
-        if (data) setMessages(data)
-        if (error) console.error("Error fetching messages:", error)
-        setLoading(false)
+        try {
+            const q = query(collection(db, "contact_messages"), orderBy("created_at", "desc"))
+            const querySnapshot = await getDocs(q)
+            const data = querySnapshot.docs.map(doc => {
+                const docData = doc.data()
+                return {
+                    id: doc.id,
+                    ...docData,
+                    created_at: docData.created_at?.toDate?.()?.toISOString() || new Date().toISOString()
+                }
+            }) as ContactMessage[]
+            setMessages(data)
+        } catch (error) {
+            console.error("Error fetching messages:", error)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleDelete = async (id: string) => {
@@ -41,13 +51,7 @@ export default function MessagesPage() {
         setDeleting(true)
 
         try {
-            const { error } = await supabase
-                .from("contact_messages")
-                .delete()
-                .eq("id", id)
-
-            if (error) throw error
-
+            await deleteDoc(doc(db, "contact_messages", id))
             alert("Message deleted successfully")
             setSelectedMessage(null)
             fetchMessages()

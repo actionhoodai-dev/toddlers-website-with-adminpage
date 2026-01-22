@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, where, limit, serverTimestamp } from "firebase/firestore"
 import { Plus, Edit, Trash2, Save, X, ExternalLink } from "lucide-react"
 
 interface Service {
@@ -30,18 +31,19 @@ export default function ServicesManagerPage() {
     }, [])
 
     const fetchServices = async () => {
-        const { data, error } = await supabase
-            .from("services")
-            .select("*")
-            .order("display_order", { ascending: true })
-
-        if (error) {
-            console.error("Error fetching services:", error)
-            alert("Failed to load services")
-        } else {
+        try {
+            const q = query(collection(db, "services"), orderBy("display_order", "asc"))
+            const querySnapshot = await getDocs(q)
+            const data = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Service[]
             setServices(data || [])
+        } catch (error) {
+            console.error("Error fetching services:", error)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     const handleAdd = () => {
@@ -80,48 +82,56 @@ export default function ServicesManagerPage() {
         setFormData({ ...formData, title: value, slug: generateSlug(value) })
     }
 
+    const checkSlugUniqueness = async (slug: string, excludeId?: string) => {
+        const q = query(collection(db, "services"), where("slug", "==", slug), limit(1))
+        const querySnapshot = await getDocs(q)
+        if (querySnapshot.empty) return true
+
+        // If it exists, check if it's the same document we are editing
+        return querySnapshot.docs[0].id === excludeId
+    }
+
     const handleSave = async () => {
         if (!formData.title.trim() || !formData.slug.trim() || !formData.short_description.trim()) {
             alert("Please fill in all required fields (Title, Slug, Short Description)")
             return
         }
 
-        if (isAddingNew) {
-            // Insert new service
-            const { error } = await supabase.from("services").insert({
-                title: formData.title,
-                slug: formData.slug,
-                short_description: formData.short_description,
-                full_description: formData.full_description.trim() || null,
-                display_order: services.length + 1,
-            })
+        const isSlugUnique = await checkSlugUniqueness(formData.slug, editingService?.id)
+        if (!isSlugUnique) {
+            alert("A service with this slug already exists. Please choose a different title or slug.")
+            return
+        }
 
-            if (error) {
-                console.error("Error adding service:", error)
-                alert("Failed to add service. Slug might already exist.")
-                return
-            }
-        } else if (editingService) {
-            // Update existing service
-            const { error } = await supabase
-                .from("services")
-                .update({
+        try {
+            if (isAddingNew) {
+                // Insert new service
+                await addDoc(collection(db, "services"), {
                     title: formData.title,
                     slug: formData.slug,
                     short_description: formData.short_description,
                     full_description: formData.full_description.trim() || null,
+                    display_order: services.length + 1,
+                    created_at: serverTimestamp()
                 })
-                .eq("id", editingService.id)
-
-            if (error) {
-                console.error("Error updating service:", error)
-                alert("Failed to update service. Slug might already exist.")
-                return
+            } else if (editingService) {
+                // Update existing service
+                const serviceRef = doc(db, "services", editingService.id)
+                await updateDoc(serviceRef, {
+                    title: formData.title,
+                    slug: formData.slug,
+                    short_description: formData.short_description,
+                    full_description: formData.full_description.trim() || null,
+                    updated_at: serverTimestamp()
+                })
             }
-        }
 
-        handleCancel()
-        fetchServices()
+            handleCancel()
+            fetchServices()
+        } catch (error) {
+            console.error("Error saving service:", error)
+            alert("Failed to save service. Please try again.")
+        }
     }
 
     const handleDelete = async (service: Service) => {
@@ -133,15 +143,13 @@ export default function ServicesManagerPage() {
             return
         }
 
-        const { error } = await supabase.from("services").delete().eq("id", service.id)
-
-        if (error) {
+        try {
+            await deleteDoc(doc(db, "services", service.id))
+            fetchServices()
+        } catch (error) {
             console.error("Error deleting service:", error)
             alert("Failed to delete service")
-            return
         }
-
-        fetchServices()
     }
 
     const hasDetailPage = (fullDescription: string | null) => {

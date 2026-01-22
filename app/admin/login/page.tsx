@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase/client"
+import { signInWithEmail } from "@/lib/auth/helpers"
 import Link from "next/link"
 
 export default function AdminLoginPage() {
@@ -12,14 +12,6 @@ export default function AdminLoginPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
-    const [configWarning, setConfigWarning] = useState<boolean>(false)
-
-    useEffect(() => {
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-        if (!url || url.includes("example.supabase.co")) {
-            setConfigWarning(true)
-        }
-    }, [])
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -34,24 +26,9 @@ export default function AdminLoginPage() {
         }
 
         try {
-            const { data, error: signInError } = await supabase.auth.signInWithPassword({
-                email: email.trim(),
-                password: password,
-            })
+            const user = await signInWithEmail(email, password)
 
-            if (signInError) {
-                if (signInError.message.includes("Invalid login credentials")) {
-                    setError("Invalid email or password. Please try again.")
-                } else if (signInError.message.includes("Email not confirmed")) {
-                    setError("Please confirm your email address before logging in.")
-                } else {
-                    setError(signInError.message)
-                }
-                setLoading(false)
-                return
-            }
-
-            if (data.user) {
+            if (user) {
                 setSuccess("Login successful! Redirecting...")
                 setTimeout(() => {
                     router.push("/admin")
@@ -59,26 +36,23 @@ export default function AdminLoginPage() {
                 }, 1000)
             }
         } catch (err: any) {
-            if (err.message === "Failed to fetch") {
-                setError("Network Error: Could not reach Supabase. This usually means the URL is invalid or blocked. Check your Vercel Environment Variables.")
+            if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+                setError("Invalid email or password. Please try again.")
+            } else if (err.code === "auth/network-request-failed") {
+                setError("Network Error: Please check your internet connection.")
             } else {
-                setError("An unexpected error occurred.")
+                setError(err.message || "An unexpected error occurred.")
             }
-            console.error(err)
+            console.error("Login catch:", err)
             setLoading(false)
         }
     }
 
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-teal-50 px-4 py-12">
-            {configWarning && (
-                <div className="bg-red-600 text-white p-4 rounded-lg mb-8 text-center animate-pulse shadow-lg font-bold">
-                    SERVER CONFIGURATION ERROR: <br />
-                    Missing Supabase URL or Key in Vercel settings. <br />
-                    Please add them to Vercel and Redeploy.
-                </div>
-            )}
             <div className="w-full max-w-md">
+
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Access</h1>
                     <p className="text-gray-600">Secure sign in for administrators</p>

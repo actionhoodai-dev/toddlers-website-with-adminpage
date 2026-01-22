@@ -1,52 +1,53 @@
-import { supabase } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
+import { auth } from "@/lib/firebase/client"
+import {
+    signInWithEmailAndPassword,
+    signOut as firebaseSignOut,
+    onAuthStateChanged,
+    User
+} from "firebase/auth"
 
 /**
- * Sign in with email and password
+ * Sign in with email and password using Firebase
  */
 export async function signInWithEmail(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    })
-
-    if (error) {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password)
+        return userCredential.user
+    } catch (error: any) {
+        console.error("Firebase Sign In Error:", error)
         throw error
     }
-
-    return data
 }
 
 /**
- * Sign out the current user
+ * Sign out the current user using Firebase
  */
 export async function signOut() {
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
+    try {
+        await firebaseSignOut(auth)
+    } catch (error: any) {
+        console.error("Firebase Sign Out Error:", error)
         throw error
     }
 }
 
 /**
- * Get the current authenticated user
+ * Get the current authenticated user from Firebase
  */
 export async function getCurrentUser(): Promise<User | null> {
-    const {
-        data: { user },
-        error,
-    } = await supabase.auth.getUser()
-
-    if (error) {
-        console.error("Error getting user:", error)
-        return null
-    }
-
-    return user
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe()
+            resolve(user)
+        }, (error) => {
+            console.error("Firebase Auth State Error:", error)
+            resolve(null)
+        })
+    })
 }
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated via Firebase
  */
 export async function isAuthenticated(): Promise<boolean> {
     const user = await getCurrentUser()
@@ -54,43 +55,20 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Get the current session
- */
-export async function getSession() {
-    const {
-        data: { session },
-        error,
-    } = await supabase.auth.getSession()
-
-    if (error) {
-        console.error("Error getting session:", error)
-        return null
-    }
-
-    return session
-}
-
-/**
- * Listen to auth state changes
+ * Listen to auth state changes in Firebase
  */
 export function onAuthStateChange(
-    callback: (event: string, session: any) => void
+    callback: (user: User | null) => void
 ) {
-    return supabase.auth.onAuthStateChange(callback)
+    return onAuthStateChanged(auth, callback)
 }
 
 /**
- * Create a new user (admin only - requires service role key)
+ * Firebase doesn't usually allow simple client-side signUp if it's restricted,
+ * but this is kept for compatibility if needed.
+ * Note: For admin creation, you'd usually use Admin SDK.
  */
 export async function createUser(email: string, password: string) {
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-    })
-
-    if (error) {
-        throw error
-    }
-
-    return data
+    // Note: This might fail if public signups are disabled in Firebase
+    throw new Error("User creation should be done via Firebase Console or Admin SDK")
 }

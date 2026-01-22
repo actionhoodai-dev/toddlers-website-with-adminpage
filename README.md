@@ -32,9 +32,11 @@ This website is built with Next.js 16, React 19, and Tailwind CSS v4, featuring:
 - **Components**: shadcn/ui
 - **Analytics**: Vercel Analytics
 
-### Backend Ready
-- **Database**: Supabase (configured but with local fallbacks)
-- **Storage**: Supabase Storage (for gallery images)
+### Backend
+- **Database**: Firebase Firestore (for CMS content, settings, and contact messages)
+- **Authentication**: Firebase Auth (admin panel authentication)
+- **Analytics**: Firebase Analytics
+- **Storage**: Not configured (Gallery feature currently disabled)
 
 ## Design System
 
@@ -92,11 +94,15 @@ npm run dev
 - Sticky navbar with scroll detection
 - Smooth scroll animations and reveals
 
-### 🔄 Ready for Integration
-- Supabase Database for gallery metadata
-- Supabase Storage for image uploads
-- Email notifications for contact form
-- CMS integration for content management
+### ✅ Integrated Backend Features
+- Firebase Firestore for dynamic CMS content
+- Firebase Authentication for admin panel
+- Contact form with Firebase Firestore storage
+- Admin dashboard for content management
+
+### 🚧 Intentionally Disabled
+- Gallery uploads (no storage backend configured)
+- Firebase Storage (not used per requirements)
 
 ## File Structure
 
@@ -132,18 +138,25 @@ hooks/
 \`\`\`bash
 # Connect your GitHub repo to Vercel
 # Push to main branch to auto-deploy
-\`\`\`
+```
 
 ### Environment Variables
 
 Create a `.env.local` file for local development:
 
-\`\`\`env
-# For Supabase integration (optional)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-\`\`\`
+```env
+# Firebase Configuration (Primary backend)
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+# NOTE: Firebase Storage is NOT used for gallery uploads
+# Gallery feature is currently disabled - no storage backend configured
+```
 
 ## Customization
 

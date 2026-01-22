@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { collection, query, orderBy, getDocs } from "firebase/firestore"
 import Link from "next/link"
 
 interface Service {
@@ -21,17 +22,20 @@ export default function Services() {
   }, [])
 
   const fetchServices = async () => {
-    const { data, error } = await supabase
-      .from("services")
-      .select("id, title, slug, short_description, full_description")
-      .order("display_order", { ascending: true })
+    try {
+      const q = query(collection(db, "services"), orderBy("display_order", "asc"))
+      const querySnapshot = await getDocs(q)
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Service[]
 
-    if (error) {
-      console.error("Error fetching services:", error)
-    } else {
       setServices(data || [])
+    } catch (error) {
+      console.error("Error fetching services:", error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const hasDetailPage = (fullDescription: string | null) => {

@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { db } from "@/lib/firebase/client"
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
 import Link from "next/link"
 
 export default function SettingsPage() {
-    const [settings, setSettings] = useState<any>({ id: 1, gallery_enabled: true, max_gallery_images: 150 })
+    const [settings, setSettings] = useState<any>({ gallery_enabled: true, max_gallery_images: 150 })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState("")
@@ -13,32 +14,26 @@ export default function SettingsPage() {
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const { data, error } = await supabase.from("site_settings").select("*").single()
+                const docRef = doc(db, "site_settings", "default")
+                const docSnap = await getDoc(docRef)
 
-                if (data) {
-                    setSettings(data)
-                } else if (error && error.code === 'PGRST116') {
-                    // No settings exist - auto-create default row
-                    console.log("No settings found, creating default...")
-                    const { data: newData, error: insertError } = await supabase
-                        .from("site_settings")
-                        .insert({ id: 1, gallery_enabled: true, max_gallery_images: 150 })
-                        .select()
-                        .single()
-
-                    if (newData) {
-                        setSettings(newData)
-                    } else {
-                        console.error("Failed to create default settings:", insertError)
-                        setMessage("Error: Could not create default settings")
-                    }
+                if (docSnap.exists()) {
+                    setSettings(docSnap.data())
                 } else {
-                    console.error("Settings fetch error:", error)
-                    setMessage("Error loading settings")
+                    // No settings exist - auto-create default row in Firestore
+                    console.log("No settings found in Firestore, creating default...")
+                    const defaultSettings = {
+                        gallery_enabled: true,
+                        max_gallery_images: 150,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }
+                    await setDoc(docRef, defaultSettings)
+                    setSettings(defaultSettings)
                 }
             } catch (err) {
-                console.error("Unexpected error:", err)
-                setMessage("Unexpected error loading settings")
+                console.error("Unexpected error loading settings:", err)
+                setMessage("Error loading settings")
             } finally {
                 setLoading(false)
             }
@@ -51,27 +46,18 @@ export default function SettingsPage() {
         setMessage("")
 
         try {
-            // Ensure id is always 1 for single-row constraint
-            const payload = {
-                id: 1,
+            const docRef = doc(db, "site_settings", "default")
+            await updateDoc(docRef, {
                 gallery_enabled: settings.gallery_enabled,
-                max_gallery_images: settings.max_gallery_images
-            }
+                max_gallery_images: settings.max_gallery_images,
+                updated_at: new Date().toISOString()
+            })
 
-            const { error } = await supabase
-                .from("site_settings")
-                .upsert(payload, { onConflict: 'id' })
-
-            if (error) {
-                console.error("Settings save error:", error)
-                setMessage("Error saving settings: " + error.message)
-            } else {
-                setMessage("Settings saved successfully!")
-                setTimeout(() => setMessage(""), 3000)
-            }
+            setMessage("Settings saved successfully!")
+            setTimeout(() => setMessage(""), 3000)
         } catch (err: any) {
             console.error("Unexpected save error:", err)
-            setMessage("Unexpected error: " + err.message)
+            setMessage("Error saving: " + err.message)
         } finally {
             setSaving(false)
         }

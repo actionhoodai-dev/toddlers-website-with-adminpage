@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/firebase/client"
+import { collection, query, where, getDocs, limit } from "firebase/firestore"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -11,17 +12,29 @@ interface ConditionDetailProps {
 
 export default async function ConditionDetail({ params }: ConditionDetailProps) {
     const { slug } = await params
-    const supabase = await createClient()
 
-    const { data: condition, error } = await supabase
-        .from("clinical_conditions")
-        .select("*")
-        .eq("slug", slug)
-        .single()
+    let condition: any = null
+    try {
+        const q = query(
+            collection(db, "conditions"),
+            where("slug", "==", slug),
+            limit(1)
+        )
+        const querySnapshot = await getDocs(q)
 
-    // 1. If not found (DB error or no rows)
+        if (!querySnapshot.empty) {
+            condition = {
+                id: querySnapshot.docs[0].id,
+                ...querySnapshot.docs[0].data()
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching condition detail:", error)
+    }
+
+    // 1. If not found
     // 2. If description is missing or empty (STRICT RULE)
-    if (error || !condition || !condition.description || !condition.description.trim()) {
+    if (!condition || !condition.description || !condition.description.trim()) {
         return notFound()
     }
 
