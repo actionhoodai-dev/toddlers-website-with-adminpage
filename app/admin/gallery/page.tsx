@@ -7,10 +7,7 @@ import Link from "next/link"
 import { Folder, Upload, Trash2, Edit2, X, Plus } from "lucide-react"
 
 /**
- * Admin Gallery Manager - CLOUDINARY STORAGE
- * 
- * - Images: Stored in Cloudinary (via /api/upload)
- * - Metadata: Stored in Firestore (via Client SDK)
+ * Admin Gallery Manager
  */
 
 interface GalleryImage {
@@ -107,7 +104,7 @@ export default function AdminGalleryPage() {
                 created_at: serverTimestamp()
             })
 
-            alert("Success! Image uploaded to Cloudinary.")
+            alert("Image uploaded successfully.")
 
             // Reset
             setIsUploadModalOpen(false)
@@ -202,11 +199,8 @@ export default function AdminGalleryPage() {
                         <p className="text-sm text-gray-600 mt-1">Total: {images.length} images</p>
                     </div>
 
-                    {/* Cloudinary Info Message */}
-                    <div className="hidden md:block flex-1 max-w-xl mx-8 p-3 bg-purple-50 border border-purple-200 rounded-lg text-purple-800 text-sm">
-                        <strong>☁️ Cloudinary Storage:</strong>
-                        <span className="ml-2">Images serve instantly from global CDN.</span>
-                    </div>
+                    {/* Cloudinary Info Message Removed */}
+
 
                     <div className="flex gap-4">
                         <button
@@ -348,7 +342,7 @@ export default function AdminGalleryPage() {
                                 disabled={uploading}
                                 className="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition shadow-lg disabled:opacity-70 flex justify-center items-center gap-2"
                             >
-                                {uploading ? "Uploading to Cloudinary..." : "Upload Image"}
+                                {uploading ? "Uploading..." : "Upload Image"}
                             </button>
                         </form>
                     </div>
