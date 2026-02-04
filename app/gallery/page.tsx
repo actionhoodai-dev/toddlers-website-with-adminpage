@@ -132,7 +132,7 @@ export default function Gallery() {
                         {CATEGORY_LABELS[img.category] || img.category}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(img.createdAt).toLocaleDateString()}
+                        {img.created_at ? new Date(img.created_at.seconds * 1000).toLocaleDateString() : 'Just now'}
                       </span>
                     </div>
                   </div>
