@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { db } from "@/lib/firebase/client"
-import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp, addDoc } from "firebase/firestore"
+import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc, serverTimestamp, addDoc } from "firebase/firestore"
 import Link from "next/link"
 import { Folder, Upload, Trash2, Edit2, X, Plus } from "lucide-react"
 
 /**
- * Admin Gallery Manager - HYBRID STORAGE
+ * Admin Gallery Manager - CLOUDINARY STORAGE
  * 
- * - Images: Stored in GitHub (via /api/gallery)
+ * - Images: Stored in Cloudinary (via /api/upload)
  * - Metadata: Stored in Firestore (via Client SDK)
  */
 
@@ -21,6 +21,7 @@ interface GalleryImage {
     category: string
     created_at?: any // Firestore timestamp
     createdAt?: any // local date string fallback
+    public_id?: string // Cloudinary ID for deletion
 }
 
 const CATEGORIES = [
@@ -62,7 +63,6 @@ export default function AdminGalleryPage() {
                 return {
                     id: doc.id,
                     ...d,
-                    src: d.src || d.image_url // Legacy support
                 }
             }) as GalleryImage[]
             setImages(data)
@@ -80,17 +80,21 @@ export default function AdminGalleryPage() {
         setUploading(true)
 
         try {
-            // 1. Upload File to GitHub via API
+            // 1. Upload File to Cloudinary via API
             const formData = new FormData()
             formData.append("file", uploadFile)
             formData.append("category", uploadData.category)
 
-            const res = await fetch('/api/gallery', {
+            const res = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
             })
 
-            if (!res.ok) throw new Error("File upload to GitHub failed")
+            if (!res.ok) {
+                const err = await res.json()
+                throw new Error(err.error || "Upload failed")
+            }
+
             const fileData = await res.json()
 
             // 2. Save Metadata to Firestore
@@ -98,20 +102,21 @@ export default function AdminGalleryPage() {
                 title: uploadData.title,
                 description: uploadData.description,
                 category: uploadData.category,
-                src: fileData.src, // Store the GitHub relative path
+                src: fileData.src, // Cloudinary URL
+                public_id: fileData.id, // Cloudinary Public ID
                 created_at: serverTimestamp()
             })
 
-            alert("Success! Image committed to GitHub. NOTE: The image will appear broken for 2-5 mins until Vercel rebuilds.")
+            alert("Success! Image uploaded to Cloudinary.")
 
             // Reset
             setIsUploadModalOpen(false)
             setUploadFile(null)
             setUploadData({ title: "", description: "", category: "general" })
             fetchImages()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Upload error:", error)
-            alert("Upload failed. Please try again.")
+            alert(`Upload failed: ${error.message}`)
         } finally {
             setUploading(false)
         }
@@ -122,12 +127,12 @@ export default function AdminGalleryPage() {
 
         setDeleting(true)
         try {
-            // 1. Delete File from GitHub (if it has a src)
-            if (img.src) {
-                await fetch('/api/gallery', {
+            // 1. Delete from Cloudinary (if public_id exists)
+            if (img.public_id) {
+                await fetch('/api/upload', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ src: img.src })
+                    body: JSON.stringify({ public_id: img.public_id })
                 })
             }
 
@@ -194,13 +199,13 @@ export default function AdminGalleryPage() {
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Gallery Manager</h1>
-                        <p className="text-sm text-gray-600 mt-1">Total: {images.length} images (Hybrid: GitHub File + Firestore Data)</p>
+                        <p className="text-sm text-gray-600 mt-1">Total: {images.length} images</p>
                     </div>
 
-                    {/* Hybrid Info Message */}
-                    <div className="hidden md:block flex-1 max-w-xl mx-8 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
-                        <strong>ℹ️ Hybrid Storage:</strong>
-                        <span className="ml-2">Images commit to GitHub (slow update). Data saves to Firestore (instant).</span>
+                    {/* Cloudinary Info Message */}
+                    <div className="hidden md:block flex-1 max-w-xl mx-8 p-3 bg-purple-50 border border-purple-200 rounded-lg text-purple-800 text-sm">
+                        <strong>☁️ Cloudinary Storage:</strong>
+                        <span className="ml-2">Images serve instantly from global CDN.</span>
                     </div>
 
                     <div className="flex gap-4">
@@ -252,11 +257,6 @@ export default function AdminGalleryPage() {
                                                     src={img.src}
                                                     alt={img.title}
                                                     className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        // Fallback for when image hasn't propagated to Vercel yet
-                                                        (e.target as HTMLImageElement).style.display = "none";
-                                                        (e.target as HTMLImageElement).parentElement!.innerText = "⏳ Building...";
-                                                    }}
                                                 />
                                             </div>
                                             <div className="p-3">
@@ -346,9 +346,9 @@ export default function AdminGalleryPage() {
                             <button
                                 type="submit"
                                 disabled={uploading}
-                                className="w-full py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition shadow-lg disabled:opacity-70 flex justify-center items-center gap-2"
+                                className="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition shadow-lg disabled:opacity-70 flex justify-center items-center gap-2"
                             >
-                                {uploading ? "Uploading to GitHub..." : "Upload Image"}
+                                {uploading ? "Uploading to Cloudinary..." : "Upload Image"}
                             </button>
                         </form>
                     </div>
@@ -375,10 +375,6 @@ export default function AdminGalleryPage() {
                                             src={previewImage.src}
                                             alt={previewImage.title}
                                             className="max-w-full max-h-[400px] object-contain"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                (e.target as HTMLImageElement).parentElement!.innerText = "Image pending build...";
-                                            }}
                                         />
                                     </div>
                                     <p className="text-xs text-gray-500">
